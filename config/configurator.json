@@ -1,0 +1,425 @@
+{
+  "hero": {
+    "kicker": "Automata Concept Lab",
+    "title": "A four-act journey through a configurable 3D concept build",
+    "paragraphs": [
+      "Designing an expressive machine requires more than a static hero shot. This hero section behaves like any editorial page. Scroll, skim, or read every line: the intent is to set the tone and explain why we obsess over digital craftsmanship before the first bolt ever exists in the real world.",
+      "Our configurator is split into chapters. First, we cover narrative and vision: the ethos behind the Automata bodywork, the raw sketches, and the material palette. We talk about proportion, stance, aerodynamic management, and the ergonomic cues that allow the cabin to feel both lounge-like and purposeful. We also outline the sound design philosophy, the robotics-inspired HMI, and the sustainability roadmap for low-volume production.",
+      "Next, you will see the canvas nestle into the top of the viewport. That section focuses purely on exterior storytelling. Radios below the sticky scene let you experiment with finishes, lighting, wheels, and trim to understand how small tweaks alter the emotional read of the object. Every option has been previsualized so the transitions feel cohesive.",
+      "After that, we pivot—literally. The camera glides to a new vantage point highlighting aerodynamics, cooling, and chassis geometry. The scrolling content now covers dynamic systems: drive modes, steering ratios, ride height, and assist levels. You always see the object responding to your scroll position, so context remains intact while you make decisions.",
+      "Finally, we return to a traditional narrative layout that wraps everything with launch plans, partnership opportunities, and a CTA for deeper collaboration. Each section feels intentional, and the pacing mirrors a studio walkthrough where you can pause and explore."
+    ]
+  },
+  "scene": {
+    "focusTargets": {
+      "overview": {
+        "radius": 7,
+        "polarDeg": 60,
+        "azimuthDeg": 35,
+        "lookAt": [0, 0.6, 0]
+      },
+      "detail": {
+        "radius": 7,
+        "polarDeg": 52,
+        "azimuthDeg": -60,
+        "lookAt": [0, 0.8, 0]
+      }
+    },
+    "objects": [
+      {
+        "id": "concept-shell",
+        "src": "/sth.glb",
+        "position": [0, -1.2, 0],
+        "rotationDeg": [0, 0, 0],
+        "scale": [1.1, 1.1, 1.1]
+      },
+      {
+        "id": "accent-left",
+        "src": "/sth.glb",
+        "position": [-2.4, -1.1, -0.8],
+        "rotationDeg": [0, 35, 0],
+        "scale": [0.35, 0.35, 0.35]
+      },
+      {
+        "id": "accent-right",
+        "src": "/sth.glb",
+        "position": [2.4, -1.1, -0.8],
+        "rotationDeg": [0, -30, 0],
+        "scale": [0.35, 0.35, 0.35]
+      },
+      {
+        "id": "spoiler",
+        "src": "/sth.glb",
+        "position": [0, -0.3, -1.8],
+        "rotationDeg": [0, 0, 0],
+        "scale": [0.4, 0.15, 0.4]
+      }
+    ]
+  },
+  "chapters": [
+    {
+      "id": "exterior",
+      "focus": "overview",
+      "kicker": "Chapter 02",
+      "title": "Exterior Identity Stack",
+      "description": "Lock in the silhouette before moving to dynamics. Each radio menu represents a visual micro-decision that would normally require a render farm—here it is immediate.",
+      "groups": [
+        {
+          "id": "paint-finish",
+          "title": "Paint Finish",
+          "helper": "Dial in the shell character by mixing matte and pearlescent coats.",
+          "options": [
+            {
+              "label": "Glacier",
+              "description": "Cool pearl white base",
+              "value": "glacier",
+              "visibility": {
+                "concept-shell": true,
+                "accent-left": false,
+                "accent-right": false,
+                "spoiler": false
+              }
+            },
+            {
+              "label": "Obsidian",
+              "description": "Low sheen matte black",
+              "value": "obsidian",
+              "visibility": {
+                "concept-shell": true,
+                "accent-left": true,
+                "accent-right": true,
+                "spoiler": false
+              }
+            },
+            {
+              "label": "Copperline",
+              "description": "Burnished metallic orange",
+              "value": "copper",
+              "visibility": {
+                "concept-shell": true,
+                "accent-left": true,
+                "accent-right": false,
+                "spoiler": true
+              }
+            },
+            {
+              "label": "Cerulean",
+              "description": "Deep electric blue",
+              "value": "cerulean",
+              "visibility": {
+                "concept-shell": true,
+                "accent-left": false,
+                "accent-right": true,
+                "spoiler": true
+              }
+            }
+          ]
+        },
+        {
+          "id": "wheel-design",
+          "title": "Wheel Design",
+          "helper": "Pick spoke geometry engineered for airflow and brake cooling.",
+          "options": [
+            {
+              "label": "Vortex",
+              "description": "Turbine-inspired",
+              "value": "vortex",
+              "visibility": {
+                "accent-left": true,
+                "accent-right": true
+              }
+            },
+            {
+              "label": "Segment",
+              "description": "Five-spoke classic",
+              "value": "segment",
+              "visibility": {
+                "accent-left": false,
+                "accent-right": false
+              }
+            },
+            {
+              "label": "Ribbon",
+              "description": "Ultra-light carbon",
+              "value": "ribbon",
+              "visibility": {
+                "accent-left": true,
+                "accent-right": false
+              }
+            },
+            {
+              "label": "Halo",
+              "description": "Full dish aero",
+              "value": "halo",
+              "visibility": {
+                "accent-left": false,
+                "accent-right": true
+              }
+            }
+          ]
+        },
+        {
+          "id": "roof-profile",
+          "title": "Roof Profile",
+          "helper": "Balance transparency and acoustic insulation.",
+          "options": [
+            {
+              "label": "Panorama",
+              "description": "Electrochromic glass",
+              "value": "panorama",
+              "visibility": {
+                "spoiler": false
+              }
+            },
+            {
+              "label": "Contour",
+              "description": "Tinted structural ridge",
+              "value": "contour",
+              "visibility": {
+                "spoiler": true
+              }
+            },
+            {
+              "label": "Stealth",
+              "description": "Carbon blackout",
+              "value": "stealth",
+              "visibility": {
+                "spoiler": true,
+                "accent-left": false,
+                "accent-right": false
+              }
+            }
+          ]
+        },
+        {
+          "id": "light-signature",
+          "title": "Light Signature",
+          "helper": "Define the character line for the running lights.",
+          "options": [
+            {
+              "label": "Pulse",
+              "description": "Animated sequential",
+              "value": "pulse",
+              "visibility": {
+                "accent-left": true,
+                "accent-right": true
+              }
+            },
+            {
+              "label": "Compass",
+              "description": "Horizontal + vertical beams",
+              "value": "compass",
+              "visibility": {
+                "accent-left": true,
+                "accent-right": false
+              }
+            },
+            {
+              "label": "Crescent",
+              "description": "Swept arc motif",
+              "value": "crescent",
+              "visibility": {
+                "accent-left": false,
+                "accent-right": true
+              }
+            }
+          ]
+        },
+        {
+          "id": "badging",
+          "title": "Badging",
+          "helper": "Match the trim and finish to your story.",
+          "options": [
+            {
+              "label": "Chrome",
+              "description": "Classic mirror finish",
+              "value": "chrome",
+              "visibility": {
+                "accent-left": false,
+                "accent-right": false
+              }
+            },
+            {
+              "label": "Shadow",
+              "description": "Smoked aluminum",
+              "value": "shadow",
+              "visibility": {
+                "accent-left": true,
+                "accent-right": true
+              }
+            },
+            {
+              "label": "Copper",
+              "description": "Warm metallic accent",
+              "value": "badge-copper",
+              "visibility": {
+                "accent-left": true,
+                "accent-right": false,
+                "spoiler": true
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dynamics",
+      "focus": "detail",
+      "kicker": "Chapter 03",
+      "title": "Dynamics, Feel, & Systems",
+      "description": "The camera drifts toward the aero channels and intake surfaces, hinting at what changes as you tune the digital chassis. Everything remains the same scene—only the vantage point shifts to prioritize motion cues.",
+      "groups": [
+        {
+          "id": "drive-mode",
+          "title": "Drive Mode",
+          "helper": "Shape throttle, damping, and aero mapping.",
+          "options": [
+            {
+              "label": "Tour",
+              "description": "Comfort-first response",
+              "value": "tour",
+              "visibility": {
+                "accent-left": false,
+                "accent-right": false,
+                "spoiler": false
+              }
+            },
+            {
+              "label": "Vector",
+              "description": "Adaptive daily tuning",
+              "value": "vector",
+              "visibility": {
+                "accent-left": true,
+                "accent-right": true
+              }
+            },
+            {
+              "label": "Pulse",
+              "description": "Track telemetry lock",
+              "value": "pulse-mode",
+              "visibility": {
+                "accent-left": true,
+                "accent-right": false,
+                "spoiler": true
+              }
+            }
+          ]
+        },
+        {
+          "id": "steering-feel",
+          "title": "Steering Feel",
+          "helper": "Blend rack ratio with active rear steer.",
+          "options": [
+            {
+              "label": "Feather",
+              "description": "Light, long distance biased",
+              "value": "feather",
+              "visibility": {
+                "accent-left": false,
+                "accent-right": true
+              }
+            },
+            {
+              "label": "Balance",
+              "description": "Neutral resistance",
+              "value": "balance",
+              "visibility": {
+                "accent-left": true,
+                "accent-right": true
+              }
+            },
+            {
+              "label": "Carbon",
+              "description": "High feedback sport",
+              "value": "carbon",
+              "visibility": {
+                "accent-left": true,
+                "accent-right": false,
+                "spoiler": true
+              }
+            }
+          ]
+        },
+        {
+          "id": "suspension",
+          "title": "Suspension",
+          "helper": "Control ride height and magnetorheological damping.",
+          "options": [
+            {
+              "label": "Adaptive",
+              "description": "Self-leveling every 4ms",
+              "value": "adaptive",
+              "visibility": {
+                "accent-left": false,
+                "accent-right": false
+              }
+            },
+            {
+              "label": "Apex",
+              "description": "Low stance + stiff damper",
+              "value": "apex",
+              "visibility": {
+                "accent-left": true,
+                "accent-right": true
+              }
+            },
+            {
+              "label": "Summit",
+              "description": "Raised for rough surfaces",
+              "value": "summit",
+              "visibility": {
+                "accent-left": false,
+                "accent-right": true,
+                "spoiler": true
+              }
+            }
+          ]
+        },
+        {
+          "id": "assist-suite",
+          "title": "Assist Suite",
+          "helper": "Tune how much autonomy overlays the drive.",
+          "options": [
+            {
+              "label": "Guardian",
+              "description": "Hands-on augmented HUD",
+              "value": "guardian",
+              "visibility": {
+                "accent-left": true,
+                "accent-right": false
+              }
+            },
+            {
+              "label": "Pilot",
+              "description": "Level 3 commute focus",
+              "value": "pilot",
+              "visibility": {
+                "accent-left": false,
+                "accent-right": true
+              }
+            },
+            {
+              "label": "Off",
+              "description": "Pure mechanical control",
+              "value": "off",
+              "visibility": {
+                "accent-left": false,
+                "accent-right": false,
+                "spoiler": false
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "closing": {
+    "kicker": "Chapter 04",
+    "title": "Launch narrative & closing remarks",
+    "paragraphs": [
+      "With the heavy lifting done, this final block returns to traditional scrolling content. Here we outline go-to-market considerations, homologation pathways, and fabrication partners. The sticky scene releases, reminding visitors they are back in the narrative world and ready for next steps.",
+      "We typically pair this section with press-ready copy, executive quotes, and a lead form. Because you just walked through an interactive story, the conversation starters here are already elevated—whether you are pitching an investor, onboarding a supplier, or inviting early adopters.",
+      "Want to take it further? Swap the box for your asset, stream CMS-driven attributes into the radio menus, and connect the selections to a pricing or BOM table. The framework is ready for production; this page simply proves the interactions feel intuitive before you scale."
+    ]
+  }
+}

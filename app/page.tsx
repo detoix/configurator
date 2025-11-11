@@ -1,28 +1,92 @@
 'use client';
 
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { useEffect, useId, useMemo, useRef, useState } from "react";
-import type { Mesh } from "three";
+import { Suspense, useEffect, useId, useMemo, useRef, useState } from "react";
 import { MathUtils, Spherical, Vector3 } from "three";
+import { useGLTF } from "@react-three/drei";
 
-type SceneFocus = "overview" | "detail";
+import configurator from "@/config/configurator.json";
 
-const LOOK_AT = new Vector3(0, 0.6, 0);
-const focusTargets: Record<
-  SceneFocus,
-  { radius: number; polar: number; azimuth: number }
-> = {
-  overview: {
-    radius: 7,
-    polar: MathUtils.degToRad(60),
-    azimuth: MathUtils.degToRad(35),
-  },
-  detail: {
-    radius: 7,
-    polar: MathUtils.degToRad(52),
-    azimuth: MathUtils.degToRad(-60),
-  },
+type RadioOption = {
+  label: string;
+  description: string;
+  value: string;
+  visibility?: Record<string, boolean>;
 };
+
+type ConfiguratorGroup = {
+  id: string;
+  title: string;
+  helper: string;
+  options: RadioOption[];
+};
+
+type ConfigRadioGroupProps = ConfiguratorGroup & {
+  value: string;
+  onChange: (value: string) => void;
+};
+
+type FocusTargetConfig = {
+  radius: number;
+  polarDeg: number;
+  azimuthDeg: number;
+  lookAt: [number, number, number];
+};
+
+type SceneObjectConfig = {
+  id: string;
+  src: string;
+  position: [number, number, number];
+  rotationDeg?: [number, number, number];
+  scale?: [number, number, number];
+};
+
+type Config = {
+  hero: {
+    kicker: string;
+    title: string;
+    paragraphs: string[];
+  };
+  scene: {
+    focusTargets: Record<string, FocusTargetConfig>;
+    objects: SceneObjectConfig[];
+  };
+  chapters: Array<{
+    id: string;
+    focus: string;
+    kicker: string;
+    title: string;
+    description: string;
+    groups: ConfiguratorGroup[];
+  }>;
+  closing: {
+    kicker: string;
+    title: string;
+    paragraphs: string[];
+  };
+};
+
+const config = configurator as Config;
+type SceneFocus = keyof Config["scene"]["focusTargets"];
+
+const focusTargets = Object.entries(config.scene.focusTargets).reduce(
+  (acc, [key, value]) => {
+    acc[key as SceneFocus] = {
+      radius: value.radius,
+      polar: MathUtils.degToRad(value.polarDeg),
+      azimuth: MathUtils.degToRad(value.azimuthDeg),
+      lookAt: new Vector3(...value.lookAt),
+    };
+    return acc;
+  },
+  {} as Record<SceneFocus, { radius: number; polar: number; azimuth: number; lookAt: Vector3 }>
+);
+
+const focusKeys = Object.keys(focusTargets) as SceneFocus[];
+const defaultFocus =
+  (config.chapters[0]?.focus as SceneFocus | undefined) ??
+  focusKeys[0] ??
+  ("overview" as SceneFocus);
 
 function CameraRig({ focus }: { focus: SceneFocus }) {
   const { camera } = useThree();
@@ -47,6 +111,8 @@ function CameraRig({ focus }: { focus: SceneFocus }) {
     progress: 1,
     active: false,
   });
+  const lookAtCurrent = useRef(focusTargets[focus].lookAt.clone());
+  const lookAtTarget = useRef(focusTargets[focus].lookAt.clone());
 
   function easeOutCubic(t: number) {
     return 1 - Math.pow(1 - t, 3);
@@ -61,6 +127,7 @@ function CameraRig({ focus }: { focus: SceneFocus }) {
     transition.current.duration = 1.2;
     transition.current.progress = 0;
     transition.current.active = true;
+    lookAtTarget.current.copy(target.lookAt);
   }, [focus]);
 
   useFrame((_, delta) => {
@@ -78,56 +145,61 @@ function CameraRig({ focus }: { focus: SceneFocus }) {
       }
     }
 
-    temp.setFromSpherical(current).add(LOOK_AT);
+    lookAtCurrent.current.lerp(lookAtTarget.current, 0.08);
+    temp.setFromSpherical(current).add(lookAtCurrent.current);
     camera.position.copy(temp);
-    camera.lookAt(LOOK_AT);
+    camera.lookAt(lookAtCurrent.current);
   });
 
   return null;
 }
 
-function SpinningBox() {
-  const meshRef = useRef<Mesh>(null);
+function SceneObject({ object }: { object: SceneObjectConfig }) {
+  const gltf = useGLTF(object.src);
+  const instance = useMemo(() => gltf.scene.clone(), [gltf.scene]);
 
-  useFrame((state) => {
-    if (!meshRef.current) return;
-    const t = state.clock.elapsedTime;
-    meshRef.current.rotation.x = Math.sin(t * 0.6) * 0.18;
-    meshRef.current.rotation.y = Math.sin(t * 0.4) * 0.2;
-  });
+  const rotation = useMemo(() => {
+    const [x = 0, y = 0, z = 0] = object.rotationDeg ?? [0, 0, 0];
+    return [MathUtils.degToRad(x), MathUtils.degToRad(y), MathUtils.degToRad(z)] as [
+      number,
+      number,
+      number,
+    ];
+  }, [object]);
 
   return (
-    <mesh ref={meshRef} castShadow>
-      <boxGeometry args={[1.5, 1.5, 1.5]} />
-      {["#14b8a6", "#60a5fa", "#fbbf24", "#f472b6", "#34d399", "#f87171"].map(
-        (color, index) => (
-          <meshStandardMaterial
-            attach={`material-${index}`}
-            key={color}
-            color={color}
-            roughness={0.35}
-            metalness={0.15}
-          />
-        )
-      )}
-    </mesh>
+    <primitive
+      object={instance}
+      position={object.position}
+      rotation={rotation}
+      scale={object.scale ?? [1, 1, 1]}
+      castShadow
+      receiveShadow
+    />
   );
 }
 
-type RadioOption = {
-  label: string;
-  description: string;
-  value: string;
-};
+function SceneObjects({
+  objects,
+  visibility,
+}: {
+  objects: SceneObjectConfig[];
+  visibility: Record<string, boolean | undefined>;
+}) {
+  if (!objects.length) return null;
 
-type ConfigRadioGroupProps = {
-  title: string;
-  helper: string;
-  options: RadioOption[];
-};
+  return (
+    <>
+      {objects
+        .filter((object) => visibility[object.id] !== false)
+        .map((object) => (
+          <SceneObject key={object.id} object={object} />
+        ))}
+    </>
+  );
+}
 
-function ConfigRadioGroup({ title, helper, options }: ConfigRadioGroupProps) {
-  const [value, setValue] = useState(options[0]?.value ?? "");
+function ConfigRadioGroup({ title, helper, options, value, onChange }: ConfigRadioGroupProps) {
   const name = useId();
 
   return (
@@ -155,7 +227,7 @@ function ConfigRadioGroup({ title, helper, options }: ConfigRadioGroupProps) {
                 name={name}
                 value={option.value}
                 checked={value === option.value}
-                onChange={() => setValue(option.value)}
+                onChange={() => onChange(option.value)}
                 className="sr-only"
               />
               <span className="text-sm font-semibold uppercase tracking-widest">
@@ -170,7 +242,14 @@ function ConfigRadioGroup({ title, helper, options }: ConfigRadioGroupProps) {
   );
 }
 
-function ConfiguratorCanvas({ focus }: { focus: SceneFocus }) {
+function ConfiguratorCanvas({
+  focus,
+  objects,visibility
+}: {
+  focus: SceneFocus;
+  objects: SceneObjectConfig[];
+  visibility: Record<string, boolean | undefined>;
+}) {
   return (
     <Canvas shadows camera={{ position: [4, 3, 6], fov: 50 }}>
       <color attach="background" args={["#020617"]} />
@@ -181,129 +260,48 @@ function ConfiguratorCanvas({ focus }: { focus: SceneFocus }) {
         intensity={1.1}
         shadow-mapSize={[1024, 1024]}
       />
-      <CameraRig focus={focus} />
-      <SpinningBox />
-      <mesh rotation-x={-Math.PI / 2} position={[0, -1.2, 0]} receiveShadow>
-        <planeGeometry args={[50, 50]} />
-        <shadowMaterial opacity={0.25} />
-      </mesh>
+      <Suspense fallback={null}>
+        <CameraRig focus={focus} />
+        <SceneObjects objects={objects} visibility={visibility} />
+        <mesh rotation-x={-Math.PI / 2} position={[0, -1.2, 0]} receiveShadow>
+          <planeGeometry args={[50, 50]} />
+          <shadowMaterial opacity={0.25} />
+        </mesh>
+      </Suspense>
     </Canvas>
   );
 }
 
-const exteriorGroups: ConfigRadioGroupProps[] = [
-  {
-    title: "PAINT FINISH",
-    helper: "Dial in the shell character by mixing matte and pearlescent coats.",
-    options: [
-      { label: "Glacier", description: "Cool pearl white base", value: "glacier" },
-      { label: "Obsidian", description: "Low sheen matte black", value: "obsidian" },
-      { label: "Copperline", description: "Burnished metallic orange", value: "copper" },
-      { label: "Cerulean", description: "Deep electric blue", value: "cerulean" },
-    ],
-  },
-  {
-    title: "WHEEL DESIGN",
-    helper: "Pick spoke geometry engineered for airflow and brake cooling.",
-    options: [
-      { label: "Vortex", description: "Turbine-inspired", value: "vortex" },
-      { label: "Segment", description: "Five-spoke classic", value: "segment" },
-      { label: "Ribbon", description: "Ultra-light carbon", value: "ribbon" },
-      { label: "Halo", description: "Full dish aero", value: "halo" },
-    ],
-  },
-  {
-    title: "ROOF PROFILE",
-    helper: "Balance transparency and acoustic insulation.",
-    options: [
-      { label: "Panorama", description: "Electrochromic glass", value: "panorama" },
-      { label: "Contour", description: "Tinted structural ridge", value: "contour" },
-      { label: "Stealth", description: "Carbon blackout", value: "stealth" },
-    ],
-  },
-  {
-    title: "LIGHT SIGNATURE",
-    helper: "Define the character line for the running lights.",
-    options: [
-      { label: "Pulse", description: "Animated sequential", value: "pulse" },
-      { label: "Compass", description: "Horizontal + vertical beams", value: "compass" },
-      { label: "Crescent", description: "Swept arc motif", value: "crescent" },
-    ],
-  },
-  {
-    title: "BADGING",
-    helper: "Match the trim and finish to your story.",
-    options: [
-      { label: "Chrome", description: "Classic mirror finish", value: "chrome" },
-      { label: "Shadow", description: "Smoked aluminum", value: "shadow" },
-      { label: "Copper", description: "Warm metallic accent", value: "badge-copper" },
-    ],
-  },
-];
-
-const dynamicGroups: ConfigRadioGroupProps[] = [
-  {
-    title: "DRIVE MODE",
-    helper: "Shape throttle, damping, and aero mapping.",
-    options: [
-      { label: "Tour", description: "Comfort-first response", value: "tour" },
-      { label: "Vector", description: "Adaptive daily tuning", value: "vector" },
-      { label: "Pulse", description: "Track telemetry lock", value: "pulse-mode" },
-    ],
-  },
-  {
-    title: "STEERING FEEL",
-    helper: "Blend rack ratio with active rear steer.",
-    options: [
-      { label: "Feather", description: "Light, long distance biased", value: "feather" },
-      { label: "Balance", description: "Neutral resistance", value: "balance" },
-      { label: "Carbon", description: "High feedback sport", value: "carbon" },
-    ],
-  },
-  {
-    title: "SUSPENSION",
-    helper: "Control ride height and magnetorheological damping.",
-    options: [
-      { label: "Adaptive", description: "Self-leveling every 4ms", value: "adaptive" },
-      { label: "Apex", description: "Low stance + stiff damper", value: "apex" },
-      { label: "Summit", description: "Raised for rough surfaces", value: "summit" },
-    ],
-  },
-  {
-    title: "ASSIST SUITE",
-    helper: "Tune how much autonomy overlays the drive.",
-    options: [
-      { label: "Guardian", description: "Hands-on augmented HUD", value: "guardian" },
-      { label: "Pilot", description: "Level 3 commute focus", value: "pilot" },
-      { label: "Off", description: "Pure mechanical control", value: "off" },
-    ],
-  },
-];
-
 export default function Home() {
-  const [focus, setFocus] = useState<SceneFocus>("overview");
-  const focusRef = useRef<SceneFocus>("overview");
-  const exteriorRef = useRef<HTMLDivElement | null>(null);
-  const dynamicsRef = useRef<HTMLDivElement | null>(null);
+  const [focus, setFocus] = useState<SceneFocus>(defaultFocus);
+  const focusRef = useRef<SceneFocus>(defaultFocus);
+  const chapterRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const [selections, setSelections] = useState<Record<string, string>>(() => {
+    const initial: Record<string, string> = {};
+    config.chapters.forEach((chapter) => {
+      chapter.groups.forEach((group) => {
+        initial[group.id] = group.options[0]?.value ?? "";
+      });
+    });
+    return initial;
+  });
 
   useEffect(() => {
-    const sections = [
-      { ref: exteriorRef, focus: "overview" as SceneFocus },
-      { ref: dynamicsRef, focus: "detail" as SceneFocus },
-    ];
+    if (!config.chapters.length) return;
 
     const handleScroll = () => {
       const markerY = window.innerHeight * 0.35;
       let nextFocus: SceneFocus | null = null;
 
-      sections.forEach(({ ref, focus }) => {
-        const element = ref.current;
-        if (!element) return;
+      for (const chapter of config.chapters) {
+        const element = chapterRefs.current[chapter.id];
+        if (!element) continue;
         const rect = element.getBoundingClientRect();
         if (rect.top <= markerY && rect.bottom >= markerY) {
-          nextFocus = focus;
+          nextFocus = chapter.focus as SceneFocus;
+          break;
         }
-      });
+      }
 
       if (nextFocus && nextFocus !== focusRef.current) {
         focusRef.current = nextFocus;
@@ -321,117 +319,89 @@ export default function Home() {
     };
   }, []);
 
+  const objectVisibility = useMemo(() => {
+    const map: Record<string, boolean> = {};
+    config.chapters.forEach((chapter) => {
+      chapter.groups.forEach((group) => {
+        const selectedValue = selections[group.id];
+        const option = group.options.find((opt) => opt.value === selectedValue);
+        if (option?.visibility) {
+          Object.entries(option.visibility).forEach(([objectId, state]) => {
+            map[objectId] = state;
+          });
+        }
+      });
+    });
+    return map;
+  }, [selections]);
+
   return (
     <div className="bg-slate-950 text-white">
       <main className="mx-auto flex max-w-6xl flex-col gap-24 px-6 py-16">
         <section className="space-y-10 text-lg leading-relaxed text-slate-200">
-          <p className="text-sm uppercase tracking-[0.5em] text-teal-200">
-            Automata Concept Lab
-          </p>
-          <h1 className="text-4xl font-semibold text-white sm:text-6xl">
-            A four-act journey through a configurable 3D concept build
-          </h1>
-          <p>
-            Designing an expressive machine requires more than a static hero shot. This hero section
-            behaves like any editorial page. Scroll, skim, or read every line: the intent is to set
-            the tone and explain why we obsess over digital craftsmanship before the first bolt ever
-            exists in the real world.
-          </p>
-          <p>
-            Our configurator is split into chapters. First, we cover narrative and vision: the ethos
-            behind the Automata bodywork, the raw sketches, and the material palette. We talk about
-            proportion, stance, aerodynamic management, and the ergonomic cues that allow the cabin
-            to feel both lounge-like and purposeful. We also outline the sound design philosophy, the
-            robotics-inspired HMI, and the sustainability roadmap for low-volume production.
-          </p>
-          <p>
-            Next, you will see the canvas nestle into the top of the viewport. That section focuses
-            purely on exterior storytelling. Radios below the sticky scene let you experiment with
-            finishes, lighting, wheels, and trim to understand how small tweaks alter the emotional
-            read of the object. Every option has been previsualized so the transitions feel cohesive.
-          </p>
-          <p>
-            After that, we pivot—literally. The camera glides to a new vantage point highlighting
-            aerodynamics, cooling, and chassis geometry. The scrolling content now covers dynamic
-            systems: drive modes, steering ratios, ride height, and assist levels. You always see the
-            object responding to your scroll position, so context remains intact while you make
-            decisions.
-          </p>
-          <p>
-            Finally, we return to a traditional narrative layout that wraps everything with launch
-            plans, partnership opportunities, and a CTA for deeper collaboration. Each section feels
-            intentional, and the pacing mirrors a studio walkthrough where you can pause and explore.
-          </p>
+          <p className="text-sm uppercase tracking-[0.5em] text-teal-200">{config.hero.kicker}</p>
+          <h1 className="text-4xl font-semibold text-white sm:text-6xl">{config.hero.title}</h1>
+          {config.hero.paragraphs.map((paragraph, index) => (
+            <p key={index}>{paragraph}</p>
+          ))}
         </section>
 
         <section className="space-y-16" aria-label="Configurator chapters">
           <div className="sticky top-0 z-20 h-[33vh] min-h-[280px] overflow-hidden rounded-3xl border border-white/10 bg-black shadow-2xl">
-            <ConfiguratorCanvas focus={focus} />
+            <ConfiguratorCanvas
+              focus={focus}
+              objects={config.scene.objects}
+              visibility={objectVisibility}
+            />
           </div>
-          <div
-            ref={exteriorRef}
-            className="space-y-8 pb-32"
-            aria-label="Exterior configuration focus"
-          >
-            <header className="space-y-3">
-              <p className="text-sm uppercase tracking-[0.4em] text-teal-200">Chapter 02</p>
-              <h2 className="text-3xl font-semibold">Exterior Identity Stack</h2>
-              <p className="text-base text-white/70">
-                Lock in the silhouette before moving to dynamics. Each radio menu represents a visual
-                micro-decision that would normally require a render farm—here it is immediate.
-              </p>
-            </header>
-            <div className="space-y-6">
-              {exteriorGroups.map((group) => (
-                <ConfigRadioGroup key={group.title} {...group} />
-              ))}
+          {config.chapters.map((chapter) => (
+            <div
+              key={chapter.id}
+              ref={(node) => {
+                chapterRefs.current[chapter.id] = node;
+              }}
+              className="space-y-8 pb-32"
+              aria-label={`${chapter.title} configuration focus`}
+            >
+              <header className="space-y-3">
+                <p className="text-sm uppercase tracking-[0.4em] text-teal-200">{chapter.kicker}</p>
+                <h2 className="text-3xl font-semibold">{chapter.title}</h2>
+                <p className="text-base text-white/70">{chapter.description}</p>
+              </header>
+              <div className="space-y-6">
+                {chapter.groups.map((group) => (
+                  <ConfigRadioGroup
+                    key={group.id}
+                    id={group.id}
+                    title={group.title}
+                    helper={group.helper}
+                    options={group.options}
+                    value={selections[group.id]}
+                    onChange={(next) =>
+                      setSelections((prev) => ({
+                        ...prev,
+                        [group.id]: next,
+                      }))
+                    }
+                  />
+                ))}
+              </div>
             </div>
-          </div>
-          <div
-            ref={dynamicsRef}
-            className="space-y-8 pb-32"
-            aria-label="Dynamics configuration focus"
-          >
-            <header className="space-y-3">
-              <p className="text-sm uppercase tracking-[0.4em] text-teal-200">Chapter 03</p>
-              <h2 className="text-3xl font-semibold">Dynamics, Feel, & Systems</h2>
-              <p className="text-base text-white/70">
-                The camera drifts toward the aero channels and intake surfaces, hinting at what
-                changes as you tune the digital chassis. Everything remains the same scene—only the
-                vantage point shifts to prioritize motion cues.
-              </p>
-            </header>
-            <div className="space-y-6">
-              {dynamicGroups.map((group) => (
-                <ConfigRadioGroup key={group.title} {...group} />
-              ))}
-            </div>
-          </div>
+          ))}
         </section>
 
         <section className="space-y-8 pb-24 text-lg leading-relaxed text-slate-200">
-          <p className="text-sm uppercase tracking-[0.4em] text-teal-200">Chapter 04</p>
-          <h2 className="text-3xl font-semibold text-white">Launch narrative & closing remarks</h2>
-          <p>
-            With the heavy lifting done, this final block returns to traditional scrolling content.
-            Here we outline go-to-market considerations, homologation pathways, and fabrication
-            partners. The sticky scene releases, reminding visitors they are back in the narrative
-            world and ready for next steps.
-          </p>
-          <p>
-            We typically pair this section with press-ready copy, executive quotes, and a lead form.
-            Because you just walked through an interactive story, the conversation starters here are
-            already elevated—whether you are pitching an investor, onboarding a supplier, or inviting
-            early adopters.
-          </p>
-          <p>
-            Want to take it further? Swap the box for your asset, stream CMS-driven attributes into
-            the radio menus, and connect the selections to a pricing or BOM table. The framework is
-            ready for production; this page simply proves the interactions feel intuitive before you
-            scale.
-          </p>
+          <p className="text-sm uppercase tracking-[0.4em] text-teal-200">{config.closing.kicker}</p>
+          <h2 className="text-3xl font-semibold text-white">{config.closing.title}</h2>
+          {config.closing.paragraphs.map((paragraph, index) => (
+            <p key={index}>{paragraph}</p>
+          ))}
         </section>
       </main>
     </div>
   );
 }
+
+config.scene.objects.forEach((object) => {
+  useGLTF.preload(object.src);
+});
