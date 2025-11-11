@@ -282,6 +282,7 @@ const dynamicGroups: ConfigRadioGroupProps[] = [
 
 export default function Home() {
   const [focus, setFocus] = useState<SceneFocus>("overview");
+  const focusRef = useRef<SceneFocus>("overview");
   const exteriorRef = useRef<HTMLDivElement | null>(null);
   const dynamicsRef = useRef<HTMLDivElement | null>(null);
 
@@ -291,25 +292,33 @@ export default function Home() {
       { ref: dynamicsRef, focus: "detail" as SceneFocus },
     ];
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            const hit = sections.find((section) => section.ref.current === entry.target);
-            if (hit) {
-              setFocus(hit.focus);
-            }
-          }
-        });
-      },
-      { threshold: 0.4 }
-    );
+    const handleScroll = () => {
+      const markerY = window.innerHeight * 0.35;
+      let nextFocus: SceneFocus | null = null;
 
-    sections.forEach(({ ref }) => {
-      if (ref.current) observer.observe(ref.current);
-    });
+      sections.forEach(({ ref, focus }) => {
+        const element = ref.current;
+        if (!element) return;
+        const rect = element.getBoundingClientRect();
+        if (rect.top <= markerY && rect.bottom >= markerY) {
+          nextFocus = focus;
+        }
+      });
 
-    return () => observer.disconnect();
+      if (nextFocus && nextFocus !== focusRef.current) {
+        focusRef.current = nextFocus;
+        setFocus(nextFocus);
+      }
+    };
+
+    handleScroll();
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    window.addEventListener("resize", handleScroll);
+
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      window.removeEventListener("resize", handleScroll);
+    };
   }, []);
 
   return (
