@@ -282,8 +282,8 @@ const dynamicGroups: ConfigRadioGroupProps[] = [
 
 export default function Home() {
   const [focus, setFocus] = useState<SceneFocus>("overview");
-  const exteriorRef = useRef<HTMLElement>(null);
-  const dynamicsRef = useRef<HTMLElement>(null);
+  const exteriorRef = useRef<HTMLDivElement | null>(null);
+  const dynamicsRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     const sections = [
