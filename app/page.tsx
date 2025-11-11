@@ -66,7 +66,7 @@ type Config = {
   };
 };
 
-const config = configurator as Config;
+const config = configurator as unknown as Config;
 type SceneFocus = keyof Config["scene"]["focusTargets"];
 
 const focusTargets = Object.entries(config.scene.focusTargets).reduce(
