@@ -2,7 +2,7 @@
 
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { Suspense, useEffect, useId, useMemo, useRef, useState } from "react";
-import { MathUtils, Spherical, Vector3 } from "three";
+import { MathUtils, Spherical, Vector3, Object3D, Mesh } from "three";
 import { useGLTF } from "@react-three/drei";
 
 import configurator from "@/config/configurator.json";
@@ -33,8 +33,7 @@ type FocusTargetConfig = {
   lookAt: [number, number, number];
 };
 
-type SceneObjectConfig = {
-  id: string;
+type SceneModelConfig = {
   src: string;
   position: [number, number, number];
   rotationDeg?: [number, number, number];
@@ -49,7 +48,7 @@ type Config = {
   };
   scene: {
     focusTargets: Record<string, FocusTargetConfig>;
-    objects: SceneObjectConfig[];
+    model: SceneModelConfig;
   };
   chapters: Array<{
     id: string;
@@ -154,48 +153,50 @@ function CameraRig({ focus }: { focus: SceneFocus }) {
   return null;
 }
 
-function SceneObject({ object }: { object: SceneObjectConfig }) {
-  const gltf = useGLTF(object.src);
-  const instance = useMemo(() => gltf.scene.clone(), [gltf.scene]);
+function SingleModel({
+  modelConfig,
+  visibility,
+}: {
+  modelConfig: SceneModelConfig;
+  visibility: Record<string, boolean | undefined>;
+}) {
+  const { scene } = useGLTF(modelConfig.src);
+  const instance = useMemo(() => scene.clone(), [scene]);
 
   const rotation = useMemo(() => {
-    const [x = 0, y = 0, z = 0] = object.rotationDeg ?? [0, 0, 0];
+    const [x = 0, y = 0, z = 0] = modelConfig.rotationDeg ?? [0, 0, 0];
     return [MathUtils.degToRad(x), MathUtils.degToRad(y), MathUtils.degToRad(z)] as [
       number,
       number,
       number,
     ];
-  }, [object]);
+  }, [modelConfig]);
+
+  // Apply visibility
+  useEffect(() => {
+    instance.traverse((child) => {
+      if (child instanceof Mesh || child instanceof Object3D) {
+        // If the child has a name in our visibility map, use that.
+        // Otherwise default to visible (or whatever default behavior is desired).
+        // NOTE: In a real app, you might want to default to true if not specified,
+        // or only hide things that are explicitly set to false.
+        // Here we check if the name exists in the visibility map.
+        if (visibility[child.name] !== undefined) {
+          child.visible = !!visibility[child.name];
+        }
+      }
+    });
+  }, [instance, visibility]);
 
   return (
     <primitive
       object={instance}
-      position={object.position}
+      position={modelConfig.position}
       rotation={rotation}
-      scale={object.scale ?? [1, 1, 1]}
+      scale={modelConfig.scale ?? [1, 1, 1]}
       castShadow
       receiveShadow
     />
-  );
-}
-
-function SceneObjects({
-  objects,
-  visibility,
-}: {
-  objects: SceneObjectConfig[];
-  visibility: Record<string, boolean | undefined>;
-}) {
-  if (!objects.length) return null;
-
-  return (
-    <>
-      {objects
-        .filter((object) => visibility[object.id] !== false)
-        .map((object) => (
-          <SceneObject key={object.id} object={object} />
-        ))}
-    </>
   );
 }
 
@@ -244,10 +245,11 @@ function ConfigRadioGroup({ title, helper, options, value, onChange }: ConfigRad
 
 function ConfiguratorCanvas({
   focus,
-  objects,visibility
+  modelConfig,
+  visibility,
 }: {
   focus: SceneFocus;
-  objects: SceneObjectConfig[];
+  modelConfig: SceneModelConfig;
   visibility: Record<string, boolean | undefined>;
 }) {
   return (
@@ -262,7 +264,7 @@ function ConfiguratorCanvas({
       />
       <Suspense fallback={null}>
         <CameraRig focus={focus} />
-        <SceneObjects objects={objects} visibility={visibility} />
+        <SingleModel modelConfig={modelConfig} visibility={visibility} />
         <mesh rotation-x={-Math.PI / 2} position={[0, -1.2, 0]} receiveShadow>
           <planeGeometry args={[50, 50]} />
           <shadowMaterial opacity={0.25} />
@@ -326,8 +328,8 @@ export default function Home() {
         const selectedValue = selections[group.id];
         const option = group.options.find((opt) => opt.value === selectedValue);
         if (option?.visibility) {
-          Object.entries(option.visibility).forEach(([objectId, state]) => {
-            map[objectId] = state;
+          Object.entries(option.visibility).forEach(([meshName, state]) => {
+            map[meshName] = state;
           });
         }
       });
@@ -350,7 +352,7 @@ export default function Home() {
           <div className="sticky top-0 z-20 h-[33vh] min-h-[280px] overflow-hidden rounded-3xl border border-white/10 bg-black shadow-2xl">
             <ConfiguratorCanvas
               focus={focus}
-              objects={config.scene.objects}
+              modelConfig={config.scene.model}
               visibility={objectVisibility}
             />
           </div>
@@ -402,6 +404,4 @@ export default function Home() {
   );
 }
 
-config.scene.objects.forEach((object) => {
-  useGLTF.preload(object.src);
-});
+useGLTF.preload(config.scene.model.src);

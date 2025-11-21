@@ -16,45 +16,41 @@
         "radius": 7,
         "polarDeg": 60,
         "azimuthDeg": 35,
-        "lookAt": [0, 0.6, 0]
+        "lookAt": [
+          0,
+          0.6,
+          0
+        ]
       },
       "detail": {
         "radius": 7,
         "polarDeg": 52,
         "azimuthDeg": -60,
-        "lookAt": [0, 0.8, 0]
+        "lookAt": [
+          0,
+          0.8,
+          0
+        ]
       }
     },
-    "objects": [
-      {
-        "id": "concept-shell",
-        "src": "/sth.glb",
-        "position": [0, -1.2, 0],
-        "rotationDeg": [0, 0, 0],
-        "scale": [1.1, 1.1, 1.1]
-      },
-      {
-        "id": "accent-left",
-        "src": "/sth.glb",
-        "position": [-2.4, -1.1, -0.8],
-        "rotationDeg": [0, 35, 0],
-        "scale": [0.35, 0.35, 0.35]
-      },
-      {
-        "id": "accent-right",
-        "src": "/sth.glb",
-        "position": [2.4, -1.1, -0.8],
-        "rotationDeg": [0, -30, 0],
-        "scale": [0.35, 0.35, 0.35]
-      },
-      {
-        "id": "spoiler",
-        "src": "/sth.glb",
-        "position": [0, -0.3, -1.8],
-        "rotationDeg": [0, 0, 0],
-        "scale": [0.4, 0.15, 0.4]
-      }
-    ]
+    "model": {
+      "src": "/other.glb",
+      "position": [
+        0,
+        -1.2,
+        0
+      ],
+      "rotationDeg": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1.1,
+        1.1,
+        1.1
+      ]
+    }
   },
   "chapters": [
     {
@@ -74,10 +70,8 @@
               "description": "Cool pearl white base",
               "value": "glacier",
               "visibility": {
-                "concept-shell": true,
-                "accent-left": false,
-                "accent-right": false,
-                "spoiler": false
+                "xd": true,
+                "Cube": false
               }
             },
             {
@@ -85,10 +79,8 @@
               "description": "Low sheen matte black",
               "value": "obsidian",
               "visibility": {
-                "concept-shell": true,
-                "accent-left": true,
-                "accent-right": true,
-                "spoiler": false
+                "xd": true,
+                "Cube": true
               }
             },
             {
@@ -96,10 +88,8 @@
               "description": "Burnished metallic orange",
               "value": "copper",
               "visibility": {
-                "concept-shell": true,
-                "accent-left": true,
-                "accent-right": false,
-                "spoiler": true
+                "xd": false,
+                "Cube": true
               }
             },
             {
@@ -385,8 +375,7 @@
               "description": "Hands-on augmented HUD",
               "value": "guardian",
               "visibility": {
-                "accent-left": true,
-                "accent-right": false
+                "Cone": true
               }
             },
             {
@@ -394,8 +383,7 @@
               "description": "Level 3 commute focus",
               "value": "pilot",
               "visibility": {
-                "accent-left": false,
-                "accent-right": true
+                "Cone": false
               }
             },
             {
