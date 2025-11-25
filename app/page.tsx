@@ -65,11 +65,63 @@ type Config = {
   };
 };
 
-const config = configurator as unknown as Config;
 type SceneFocus = keyof Config["scene"]["focusTargets"];
 
-const focusTargets = Object.entries(config.scene.focusTargets).reduce(
-  (acc, [key, value]) => {
+type FocusTarget = { radius: number; polar: number; azimuth: number; lookAt: Vector3 };
+type FocusTargetsMap = Record<SceneFocus, FocusTarget>;
+
+type HomeClassNames = {
+  root: string;
+  main: string;
+  heroSection: string;
+  heroKicker: string;
+  heroTitle: string;
+  heroParagraph: string;
+  chaptersSection: string;
+  canvasWrapper: string;
+  chapterContainer: string;
+  chapterHeader: string;
+  chapterKicker: string;
+  chapterTitle: string;
+  chapterDescription: string;
+  groupWrapper: string;
+  closingSection: string;
+  closingKicker: string;
+  closingTitle: string;
+  closingParagraph: string;
+};
+
+type HomeProps = {
+  config?: Config;
+  classNames?: Partial<HomeClassNames>;
+};
+
+const defaultConfig = configurator as unknown as Config;
+
+const defaultClasses: HomeClassNames = {
+  root: "bg-slate-950 text-white",
+  main: "mx-auto flex max-w-6xl flex-col gap-24 px-6 py-16",
+  heroSection: "space-y-10 text-lg leading-relaxed text-slate-200",
+  heroKicker: "text-sm uppercase tracking-[0.5em] text-teal-200",
+  heroTitle: "text-4xl font-semibold text-white sm:text-6xl",
+  heroParagraph: "",
+  chaptersSection: "space-y-16",
+  canvasWrapper:
+    "sticky top-0 z-20 h-[33vh] min-h-[280px] overflow-hidden rounded-3xl border border-white/10 bg-black shadow-2xl",
+  chapterContainer: "space-y-8 pb-32",
+  chapterHeader: "space-y-3",
+  chapterKicker: "text-sm uppercase tracking-[0.4em] text-teal-200",
+  chapterTitle: "text-3xl font-semibold",
+  chapterDescription: "text-base text-white/70",
+  groupWrapper: "space-y-6",
+  closingSection: "space-y-8 pb-24 text-lg leading-relaxed text-slate-200",
+  closingKicker: "text-sm uppercase tracking-[0.4em] text-teal-200",
+  closingTitle: "text-3xl font-semibold text-white",
+  closingParagraph: "",
+};
+
+function buildFocusTargets(config: Config): FocusTargetsMap {
+  return Object.entries(config.scene.focusTargets).reduce((acc, [key, value]) => {
     acc[key as SceneFocus] = {
       radius: value.radius,
       polar: MathUtils.degToRad(value.polarDeg),
@@ -77,17 +129,24 @@ const focusTargets = Object.entries(config.scene.focusTargets).reduce(
       lookAt: new Vector3(...value.lookAt),
     };
     return acc;
-  },
-  {} as Record<SceneFocus, { radius: number; polar: number; azimuth: number; lookAt: Vector3 }>
-);
+  }, {} as FocusTargetsMap);
+}
 
-const focusKeys = Object.keys(focusTargets) as SceneFocus[];
-const defaultFocus =
-  (config.chapters[0]?.focus as SceneFocus | undefined) ??
-  focusKeys[0] ??
-  ("overview" as SceneFocus);
+function getDefaultFocus(config: Config, focusKeys: SceneFocus[]): SceneFocus {
+  return (config.chapters[0]?.focus as SceneFocus | undefined) ?? focusKeys[0] ?? ("overview" as SceneFocus);
+}
 
-function CameraRig({ focus }: { focus: SceneFocus }) {
+function buildDefaultSelections(config: Config) {
+  const initial: Record<string, string> = {};
+  config.chapters.forEach((chapter) => {
+    chapter.groups.forEach((group) => {
+      initial[group.id] = group.options[0]?.value ?? "";
+    });
+  });
+  return initial;
+}
+
+function CameraRig({ focus, focusTargets }: { focus: SceneFocus; focusTargets: FocusTargetsMap }) {
   const { camera } = useThree();
   const temp = useMemo(() => new Vector3(), []);
   const spherical = useRef(
@@ -247,10 +306,12 @@ function ConfiguratorCanvas({
   focus,
   modelConfig,
   visibility,
+  focusTargets,
 }: {
   focus: SceneFocus;
   modelConfig: SceneModelConfig;
   visibility: Record<string, boolean | undefined>;
+  focusTargets: FocusTargetsMap;
 }) {
   return (
     <Canvas shadows camera={{ position: [4, 3, 6], fov: 50 }}>
@@ -263,7 +324,7 @@ function ConfiguratorCanvas({
         shadow-mapSize={[1024, 1024]}
       />
       <Suspense fallback={null}>
-        <CameraRig focus={focus} />
+        <CameraRig focus={focus} focusTargets={focusTargets} />
         <SingleModel modelConfig={modelConfig} visibility={visibility} />
         <mesh rotation-x={-Math.PI / 2} position={[0, -1.2, 0]} receiveShadow>
           <planeGeometry args={[50, 50]} />
@@ -274,19 +335,34 @@ function ConfiguratorCanvas({
   );
 }
 
-export default function Home() {
+export default function Home({ config: configProp, classNames }: HomeProps) {
+  const config = useMemo(() => configProp ?? defaultConfig, [configProp]);
+  const focusTargets = useMemo(() => buildFocusTargets(config), [config]);
+  const focusKeys = useMemo(() => Object.keys(focusTargets) as SceneFocus[], [focusTargets]);
+  const defaultFocus = useMemo(() => getDefaultFocus(config, focusKeys), [config, focusKeys]);
+
+  const mergedClasses = useMemo(
+    () => ({
+      ...defaultClasses,
+      ...classNames,
+    }),
+    [classNames]
+  );
+
   const [focus, setFocus] = useState<SceneFocus>(defaultFocus);
   const focusRef = useRef<SceneFocus>(defaultFocus);
   const chapterRefs = useRef<Record<string, HTMLDivElement | null>>({});
-  const [selections, setSelections] = useState<Record<string, string>>(() => {
-    const initial: Record<string, string> = {};
-    config.chapters.forEach((chapter) => {
-      chapter.groups.forEach((group) => {
-        initial[group.id] = group.options[0]?.value ?? "";
-      });
-    });
-    return initial;
-  });
+  const [selections, setSelections] = useState<Record<string, string>>(() => buildDefaultSelections(config));
+
+  useEffect(() => {
+    useGLTF.preload(config.scene.model.src);
+  }, [config.scene.model.src]);
+
+  useEffect(() => {
+    setSelections(buildDefaultSelections(config));
+    setFocus(defaultFocus);
+    focusRef.current = defaultFocus;
+  }, [config, defaultFocus]);
 
   useEffect(() => {
     if (!config.chapters.length) return;
@@ -319,7 +395,7 @@ export default function Home() {
       window.removeEventListener("scroll", handleScroll);
       window.removeEventListener("resize", handleScroll);
     };
-  }, []);
+  }, [config.chapters]);
 
   const objectVisibility = useMemo(() => {
     const map: Record<string, boolean> = {};
@@ -338,22 +414,25 @@ export default function Home() {
   }, [selections]);
 
   return (
-    <div className="bg-slate-950 text-white">
-      <main className="mx-auto flex max-w-6xl flex-col gap-24 px-6 py-16">
-        <section className="space-y-10 text-lg leading-relaxed text-slate-200">
-          <p className="text-sm uppercase tracking-[0.5em] text-teal-200">{config.hero.kicker}</p>
-          <h1 className="text-4xl font-semibold text-white sm:text-6xl">{config.hero.title}</h1>
+    <div className={mergedClasses.root}>
+      <main className={mergedClasses.main}>
+        <section className={mergedClasses.heroSection}>
+          <p className={mergedClasses.heroKicker}>{config.hero.kicker}</p>
+          <h1 className={mergedClasses.heroTitle}>{config.hero.title}</h1>
           {config.hero.paragraphs.map((paragraph, index) => (
-            <p key={index}>{paragraph}</p>
+            <p key={index} className={mergedClasses.heroParagraph}>
+              {paragraph}
+            </p>
           ))}
         </section>
 
-        <section className="space-y-16" aria-label="Configurator chapters">
-          <div className="sticky top-0 z-20 h-[33vh] min-h-[280px] overflow-hidden rounded-3xl border border-white/10 bg-black shadow-2xl">
+        <section className={mergedClasses.chaptersSection} aria-label="Configurator chapters">
+          <div className={mergedClasses.canvasWrapper}>
             <ConfiguratorCanvas
               focus={focus}
               modelConfig={config.scene.model}
               visibility={objectVisibility}
+              focusTargets={focusTargets}
             />
           </div>
           {config.chapters.map((chapter) => (
@@ -362,15 +441,15 @@ export default function Home() {
               ref={(node) => {
                 chapterRefs.current[chapter.id] = node;
               }}
-              className="space-y-8 pb-32"
+              className={mergedClasses.chapterContainer}
               aria-label={`${chapter.title} configuration focus`}
             >
-              <header className="space-y-3">
-                <p className="text-sm uppercase tracking-[0.4em] text-teal-200">{chapter.kicker}</p>
-                <h2 className="text-3xl font-semibold">{chapter.title}</h2>
-                <p className="text-base text-white/70">{chapter.description}</p>
+              <header className={mergedClasses.chapterHeader}>
+                <p className={mergedClasses.chapterKicker}>{chapter.kicker}</p>
+                <h2 className={mergedClasses.chapterTitle}>{chapter.title}</h2>
+                <p className={mergedClasses.chapterDescription}>{chapter.description}</p>
               </header>
-              <div className="space-y-6">
+              <div className={mergedClasses.groupWrapper}>
                 {chapter.groups.map((group) => (
                   <ConfigRadioGroup
                     key={group.id}
@@ -392,16 +471,16 @@ export default function Home() {
           ))}
         </section>
 
-        <section className="space-y-8 pb-24 text-lg leading-relaxed text-slate-200">
-          <p className="text-sm uppercase tracking-[0.4em] text-teal-200">{config.closing.kicker}</p>
-          <h2 className="text-3xl font-semibold text-white">{config.closing.title}</h2>
+        <section className={mergedClasses.closingSection}>
+          <p className={mergedClasses.closingKicker}>{config.closing.kicker}</p>
+          <h2 className={mergedClasses.closingTitle}>{config.closing.title}</h2>
           {config.closing.paragraphs.map((paragraph, index) => (
-            <p key={index}>{paragraph}</p>
+            <p key={index} className={mergedClasses.closingParagraph}>
+              {paragraph}
+            </p>
           ))}
         </section>
       </main>
     </div>
   );
 }
-
-useGLTF.preload(config.scene.model.src);
