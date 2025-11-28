@@ -1,6 +1,6 @@
 'use client';
 
-import { Canvas, useFrame, useThree, type ThreeEvent } from "@react-three/fiber";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import {
   Suspense,
   useCallback,
@@ -12,7 +12,7 @@ import {
   type ChangeEvent,
   type MouseEvent,
 } from "react";
-import { MathUtils, Spherical, Vector3, Object3D, Mesh, Color } from "three";
+import { MathUtils, Spherical, Vector3, Object3D, Mesh } from "three";
 import { OrbitControls, useGLTF } from "@react-three/drei";
 import { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import { DndProvider, useDrag, useDrop } from "react-dnd";
@@ -292,18 +292,10 @@ function SingleModel({
   modelConfig,
   visibility,
   gltfScene,
-  selectionEnabled,
-  onToggleMesh,
-  hoveredMeshName,
-  onHoverMesh,
 }: {
   modelConfig: SceneModelConfig;
   visibility: Record<string, boolean | undefined>;
   gltfScene: Object3D;
-  selectionEnabled: boolean;
-  onToggleMesh: (meshName: string) => void;
-  hoveredMeshName: string | null;
-  onHoverMesh: (meshName: string | null) => void;
 }) {
   const instance = useMemo(() => gltfScene.clone(), [gltfScene]);
 
@@ -321,38 +313,20 @@ function SingleModel({
       if (child instanceof Mesh || child instanceof Object3D) {
         const override = visibility[child.name];
         const shouldHide = override === false;
-        // Keep meshes interactable in selection mode; otherwise hide when flagged off.
-        child.visible = selectionEnabled ? true : !shouldHide;
+        child.visible = !shouldHide;
         if (child instanceof Mesh) {
           const materials = Array.isArray(child.material) ? child.material : [child.material];
           materials.forEach((mat) => {
             if (!mat) return;
-            mat.transparent = true;
-            mat.opacity = selectionEnabled && shouldHide ? 0.25 : 1;
-            mat.depthWrite = !(selectionEnabled && shouldHide);
-            const isHovered = selectionEnabled && hoveredMeshName === child.name;
-            if ("emissive" in mat && mat.emissive instanceof Color) {
-              if (!mat.userData._baseEmissive) {
-                mat.userData._baseEmissive = mat.emissive.clone();
-                mat.userData._baseEmissiveIntensity = mat.emissiveIntensity ?? 1;
-              }
-              const base: Color = mat.userData._baseEmissive.clone();
-              const baseIntensity: number = mat.userData._baseEmissiveIntensity ?? 1;
-              mat.emissive.copy(isHovered ? new Color("#22f2ff") : base);
-              mat.emissiveIntensity = isHovered ? 1.2 : baseIntensity;
-            } else if ("color" in mat && mat.color instanceof Color) {
-              if (!mat.userData._baseColor) {
-                mat.userData._baseColor = mat.color.clone();
-              }
-              const base: Color = mat.userData._baseColor.clone();
-              mat.color.copy(isHovered ? base.clone().lerp(new Color("#22f2ff"), 0.6) : base);
-            }
+            mat.transparent = false;
+            mat.opacity = 1;
+            mat.depthWrite = true;
             mat.needsUpdate = true;
           });
         }
       }
     });
-  }, [hoveredMeshName, instance, selectionEnabled, visibility]);
+  }, [instance, visibility]);
 
   return (
     <primitive
@@ -362,25 +336,6 @@ function SingleModel({
       scale={modelConfig.scale ?? [1, 1, 1]}
       castShadow
       receiveShadow
-      onPointerDown={(e: ThreeEvent<PointerEvent>) => {
-        if (!selectionEnabled) return;
-        e.stopPropagation();
-        const name = e.object.name;
-        if (name) onToggleMesh(name);
-      }}
-      onPointerEnter={(e: ThreeEvent<PointerEvent>) => {
-        if (!selectionEnabled) return;
-        e.stopPropagation();
-        const name = e.object.name;
-        if (name) onHoverMesh(name);
-        document.body.style.cursor = "pointer";
-      }}
-      onPointerLeave={(e: ThreeEvent<PointerEvent>) => {
-        if (!selectionEnabled) return;
-        e.stopPropagation();
-        onHoverMesh(null);
-        document.body.style.cursor = "";
-      }}
     />
   );
 }
@@ -617,10 +572,6 @@ function ConfiguratorCanvas({
   visibility,
   focusTargets,
   gltfScene,
-  selectionEnabled,
-  onToggleMesh,
-  hoveredMeshName,
-  onHoverMesh,
   orbitEnabled,
   onOrbitCameraChange,
   orbitCameraState,
@@ -631,10 +582,6 @@ function ConfiguratorCanvas({
   visibility: Record<string, boolean | undefined>;
   focusTargets: FocusTargetsMap;
   gltfScene: Object3D | null;
-  selectionEnabled: boolean;
-  onToggleMesh: (meshName: string) => void;
-  hoveredMeshName: string | null;
-  onHoverMesh: (meshName: string | null) => void;
   orbitEnabled: boolean;
   onOrbitCameraChange: (state: { position: [number, number, number]; target: [number, number, number] }) => void;
   orbitCameraState: { position: [number, number, number]; target: [number, number, number] } | null;
@@ -682,15 +629,7 @@ function ConfiguratorCanvas({
             onStart={handleOrbitStart}
           />
         )}
-        <SingleModel
-          modelConfig={modelConfig}
-          visibility={visibility}
-          gltfScene={gltfScene}
-          selectionEnabled={selectionEnabled}
-          onToggleMesh={onToggleMesh}
-          hoveredMeshName={hoveredMeshName}
-          onHoverMesh={onHoverMesh}
-        />
+        <SingleModel modelConfig={modelConfig} visibility={visibility} gltfScene={gltfScene} />
         <mesh rotation-x={-Math.PI / 2} position={[0, -1.2, 0]} receiveShadow>
           <planeGeometry args={[50, 50]} />
           <shadowMaterial opacity={0.25} />
@@ -1009,7 +948,6 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
   const [sceneModel, setSceneModel] = useState(config.scene.model);
   const [gltfScene, setGltfScene] = useState<Object3D | null>(null);
   const [localModelUrl, setLocalModelUrl] = useState<string | null>(null);
-  const [hoveredMeshName, setHoveredMeshName] = useState<string | null>(null);
   const [orbitEnabled, setOrbitEnabled] = useState(false);
   const [orbitCameraState, setOrbitCameraState] = useState<{
     position: [number, number, number];
@@ -1047,7 +985,7 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
     [classNames]
   );
 
-  const [mode, setMode] = useState<"design" | "preview">("preview");
+  const [mode, setMode] = useState<"design" | "preview">("design");
   const [chapterOrder, setChapterOrder] = useState<string[]>(() =>
     chapters.map((chapter) => chapter.id)
   );
@@ -1748,10 +1686,6 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
             visibility={objectVisibility}
             focusTargets={focusTargets}
             gltfScene={gltfScene}
-            selectionEnabled={isDesignMode}
-            onToggleMesh={handleToggleMeshVisibility}
-            hoveredMeshName={hoveredMeshName}
-            onHoverMesh={setHoveredMeshName}
             orbitEnabled={orbitEnabled}
             onOrbitCameraChange={setOrbitCameraState}
             orbitCameraState={orbitCameraState}
