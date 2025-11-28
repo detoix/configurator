@@ -1,9 +1,20 @@
 'use client';
 
-import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { Suspense, useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
-import { MathUtils, Spherical, Vector3, Object3D, Mesh } from "three";
-import { useGLTF } from "@react-three/drei";
+import { Canvas, useFrame, useThree, type ThreeEvent } from "@react-three/fiber";
+import {
+  Suspense,
+  useCallback,
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+  type ChangeEvent,
+  type MouseEvent,
+} from "react";
+import { MathUtils, Spherical, Vector3, Object3D, Mesh, Color } from "three";
+import { OrbitControls, useGLTF } from "@react-three/drei";
+import { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import { DndProvider, useDrag, useDrop } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 
@@ -178,7 +189,19 @@ function buildDefaultSelections(config: Config) {
   return initial;
 }
 
-function CameraRig({ focus, focusTargets }: { focus: SceneFocus; focusTargets: FocusTargetsMap }) {
+function CameraRig({
+  focus,
+  focusTargets,
+  orbitEnabled,
+  manualState,
+  resetToken,
+}: {
+  focus: SceneFocus;
+  focusTargets: FocusTargetsMap;
+  orbitEnabled: boolean;
+  manualState: { position: [number, number, number]; target: [number, number, number] } | null;
+  resetToken: number;
+}) {
   const { camera } = useThree();
   const temp = useMemo(() => new Vector3(), []);
   const spherical = useRef(
@@ -203,12 +226,18 @@ function CameraRig({ focus, focusTargets }: { focus: SceneFocus; focusTargets: F
   });
   const lookAtCurrent = useRef(focusTargets[focus].lookAt.clone());
   const lookAtTarget = useRef(focusTargets[focus].lookAt.clone());
+  const prevFocusRef = useRef<SceneFocus>(focus);
+  const prevResetRef = useRef<number>(resetToken);
 
   function easeOutCubic(t: number) {
     return 1 - Math.pow(1 - t, 3);
   }
 
   useEffect(() => {
+    if (orbitEnabled) return;
+    const isFocusSame = prevFocusRef.current === focus;
+    const isResetSame = prevResetRef.current === resetToken;
+    if (isFocusSame && isResetSame) return;
     const target = focusTargets[focus];
     transition.current.start.copy(spherical.current);
     transition.current.end.radius = target.radius;
@@ -218,9 +247,24 @@ function CameraRig({ focus, focusTargets }: { focus: SceneFocus; focusTargets: F
     transition.current.progress = 0;
     transition.current.active = true;
     lookAtTarget.current.copy(target.lookAt);
-  }, [focus, focusTargets]);
+    prevFocusRef.current = focus;
+    prevResetRef.current = resetToken;
+  }, [focus, focusTargets, orbitEnabled, resetToken]);
+
+  useEffect(() => {
+    if (orbitEnabled) return;
+    if (!manualState) return;
+    const target = new Vector3(...manualState.target);
+    const position = new Vector3(...manualState.position);
+    lookAtCurrent.current.copy(target);
+    lookAtTarget.current.copy(target);
+    temp.copy(position).sub(target);
+    spherical.current.setFromVector3(temp);
+    transition.current.active = false;
+  }, [manualState, orbitEnabled, temp]);
 
   useFrame((_, delta) => {
+    if (orbitEnabled) return;
     const current = spherical.current;
     const tween = transition.current;
 
@@ -248,10 +292,18 @@ function SingleModel({
   modelConfig,
   visibility,
   gltfScene,
+  selectionEnabled,
+  onToggleMesh,
+  hoveredMeshName,
+  onHoverMesh,
 }: {
   modelConfig: SceneModelConfig;
   visibility: Record<string, boolean | undefined>;
   gltfScene: Object3D;
+  selectionEnabled: boolean;
+  onToggleMesh: (meshName: string) => void;
+  hoveredMeshName: string | null;
+  onHoverMesh: (meshName: string | null) => void;
 }) {
   const instance = useMemo(() => gltfScene.clone(), [gltfScene]);
 
@@ -267,12 +319,40 @@ function SingleModel({
   useEffect(() => {
     instance.traverse((child) => {
       if (child instanceof Mesh || child instanceof Object3D) {
-        // Default visible; override only when explicit visibility is provided for the current option.
-        child.visible = true;
-        if (visibility[child.name] !== undefined) child.visible = !!visibility[child.name];
+        const override = visibility[child.name];
+        const shouldHide = override === false;
+        // Keep meshes interactable in selection mode; otherwise hide when flagged off.
+        child.visible = selectionEnabled ? true : !shouldHide;
+        if (child instanceof Mesh) {
+          const materials = Array.isArray(child.material) ? child.material : [child.material];
+          materials.forEach((mat) => {
+            if (!mat) return;
+            mat.transparent = true;
+            mat.opacity = selectionEnabled && shouldHide ? 0.25 : 1;
+            mat.depthWrite = !(selectionEnabled && shouldHide);
+            const isHovered = selectionEnabled && hoveredMeshName === child.name;
+            if ("emissive" in mat && mat.emissive instanceof Color) {
+              if (!mat.userData._baseEmissive) {
+                mat.userData._baseEmissive = mat.emissive.clone();
+                mat.userData._baseEmissiveIntensity = mat.emissiveIntensity ?? 1;
+              }
+              const base: Color = mat.userData._baseEmissive.clone();
+              const baseIntensity: number = mat.userData._baseEmissiveIntensity ?? 1;
+              mat.emissive.copy(isHovered ? new Color("#22f2ff") : base);
+              mat.emissiveIntensity = isHovered ? 1.2 : baseIntensity;
+            } else if ("color" in mat && mat.color instanceof Color) {
+              if (!mat.userData._baseColor) {
+                mat.userData._baseColor = mat.color.clone();
+              }
+              const base: Color = mat.userData._baseColor.clone();
+              mat.color.copy(isHovered ? base.clone().lerp(new Color("#22f2ff"), 0.6) : base);
+            }
+            mat.needsUpdate = true;
+          });
+        }
       }
     });
-  }, [instance, visibility]);
+  }, [hoveredMeshName, instance, selectionEnabled, visibility]);
 
   return (
     <primitive
@@ -282,6 +362,25 @@ function SingleModel({
       scale={modelConfig.scale ?? [1, 1, 1]}
       castShadow
       receiveShadow
+      onPointerDown={(e: ThreeEvent<PointerEvent>) => {
+        if (!selectionEnabled) return;
+        e.stopPropagation();
+        const name = e.object.name;
+        if (name) onToggleMesh(name);
+      }}
+      onPointerEnter={(e: ThreeEvent<PointerEvent>) => {
+        if (!selectionEnabled) return;
+        e.stopPropagation();
+        const name = e.object.name;
+        if (name) onHoverMesh(name);
+        document.body.style.cursor = "pointer";
+      }}
+      onPointerLeave={(e: ThreeEvent<PointerEvent>) => {
+        if (!selectionEnabled) return;
+        e.stopPropagation();
+        onHoverMesh(null);
+        document.body.style.cursor = "";
+      }}
     />
   );
 }
@@ -387,20 +486,24 @@ function EditableOptionRow({
               <input
                 className="w-full rounded-lg border border-white/10 bg-slate-900/70 px-3 py-2 text-sm text-white"
                 value={draft.label}
-                onChange={(e) => setDraft((prev) => ({ ...prev, label: e.target.value }))}
+                onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                  setDraft((prev) => ({ ...prev, label: e.target.value }))
+                }
                 placeholder="Label"
               />
               <input
                 className="w-full rounded-lg border border-white/10 bg-slate-900/70 px-3 py-2 text-sm text-white"
                 value={draft.description}
-                onChange={(e) => setDraft((prev) => ({ ...prev, description: e.target.value }))}
+                onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                  setDraft((prev) => ({ ...prev, description: e.target.value }))
+                }
                 placeholder="Description"
               />
               <input
                 type="number"
                 className="w-full rounded-lg border border-white/10 bg-slate-900/70 px-3 py-2 text-sm text-white"
                 value={draft.price}
-                onChange={(e) =>
+                onChange={(e: ChangeEvent<HTMLInputElement>) =>
                   setDraft((prev) => ({ ...prev, price: parseFloat(e.target.value) || 0 }))
                 }
                 placeholder="Price"
@@ -514,13 +617,43 @@ function ConfiguratorCanvas({
   visibility,
   focusTargets,
   gltfScene,
+  selectionEnabled,
+  onToggleMesh,
+  hoveredMeshName,
+  onHoverMesh,
+  orbitEnabled,
+  onOrbitCameraChange,
+  orbitCameraState,
+  resetToken,
 }: {
   focus: SceneFocus;
   modelConfig: SceneModelConfig;
   visibility: Record<string, boolean | undefined>;
   focusTargets: FocusTargetsMap;
   gltfScene: Object3D | null;
+  selectionEnabled: boolean;
+  onToggleMesh: (meshName: string) => void;
+  hoveredMeshName: string | null;
+  onHoverMesh: (meshName: string | null) => void;
+  orbitEnabled: boolean;
+  onOrbitCameraChange: (state: { position: [number, number, number]; target: [number, number, number] }) => void;
+  orbitCameraState: { position: [number, number, number]; target: [number, number, number] } | null;
+  resetToken: number;
 }) {
+  const controlsRef = useRef<OrbitControlsImpl | null>(null);
+
+  const handleOrbitChange = useCallback(() => {
+    const controls = controlsRef.current;
+    if (!controls) return;
+    const position = controls.object.position.toArray() as [number, number, number];
+    const target = controls.target.toArray() as [number, number, number];
+    onOrbitCameraChange({ position, target });
+  }, [onOrbitCameraChange]);
+
+  const handleOrbitStart = useCallback(() => {
+    handleOrbitChange();
+  }, [handleOrbitChange]);
+
   if (!gltfScene) return null;
   return (
     <Canvas shadows camera={{ position: [4, 3, 6], fov: 50 }}>
@@ -533,13 +666,39 @@ function ConfiguratorCanvas({
         shadow-mapSize={[1024, 1024]}
       />
       <Suspense fallback={null}>
-        <CameraRig focus={focus} focusTargets={focusTargets} />
-        <SingleModel modelConfig={modelConfig} visibility={visibility} gltfScene={gltfScene} />
+        <CameraRig
+          focus={focus}
+          focusTargets={focusTargets}
+          orbitEnabled={orbitEnabled}
+          manualState={orbitCameraState}
+          resetToken={resetToken}
+        />
+        {orbitEnabled && (
+          <OrbitControls
+            enableDamping
+            makeDefault
+            ref={controlsRef}
+            onChange={handleOrbitChange}
+            onStart={handleOrbitStart}
+          />
+        )}
+        <SingleModel
+          modelConfig={modelConfig}
+          visibility={visibility}
+          gltfScene={gltfScene}
+          selectionEnabled={selectionEnabled}
+          onToggleMesh={onToggleMesh}
+          hoveredMeshName={hoveredMeshName}
+          onHoverMesh={onHoverMesh}
+        />
         <mesh rotation-x={-Math.PI / 2} position={[0, -1.2, 0]} receiveShadow>
           <planeGeometry args={[50, 50]} />
           <shadowMaterial opacity={0.25} />
         </mesh>
       </Suspense>
+      {orbitEnabled && (
+        <ambientLight intensity={0.05} color="#88ffff" />
+      )}
     </Canvas>
   );
 }
@@ -624,6 +783,10 @@ function buildMeshTree(node: Object3D, counter: { current: number }): MeshTreeNo
     }
     counter.current += 1;
   }
+  // Ensure meshes have stable names for selection/visibility.
+  if (label && node.name !== label) {
+    node.name = label;
+  }
   if (!label && !children.length) return null;
   return {
     name: label || "(group)",
@@ -701,7 +864,7 @@ function DraggableChapterItem({
         <span className="text-xs uppercase tracking-[0.2em] text-white/40">{chapter.kicker}</span>
         <button
           type="button"
-          onClick={(e) => {
+          onClick={(e: MouseEvent<HTMLButtonElement>) => {
             e.stopPropagation();
             onDelete(chapter.id);
           }}
@@ -846,6 +1009,17 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
   const [sceneModel, setSceneModel] = useState(config.scene.model);
   const [gltfScene, setGltfScene] = useState<Object3D | null>(null);
   const [localModelUrl, setLocalModelUrl] = useState<string | null>(null);
+  const [hoveredMeshName, setHoveredMeshName] = useState<string | null>(null);
+  const [orbitEnabled, setOrbitEnabled] = useState(false);
+  const [orbitCameraState, setOrbitCameraState] = useState<{
+    position: [number, number, number];
+    target: [number, number, number];
+  } | null>(null);
+  const [preOrbitCameraState, setPreOrbitCameraState] = useState<{
+    position: [number, number, number];
+    target: [number, number, number];
+  } | null>(null);
+  const [resetCameraToken, setResetCameraToken] = useState(0);
   const isClient = typeof window !== "undefined";
   const focusTargets = useMemo(
     () =>
@@ -898,7 +1072,6 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
     [activeChapterId, orderedChapters]
   );
   const activeFocusKey = activeChapter?.focus as SceneFocus | undefined;
-  const activeFocus = activeFocusKey ? focusTargetConfigs[activeFocusKey] : undefined;
   const [chapterDrafts, setChapterDrafts] = useState<Record<string, Partial<Config["chapters"][number]>>>(
     {}
   );
@@ -928,42 +1101,6 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
       return updated;
     });
   }, []);
-
-  const handleUpdateFocusTarget = useCallback(
-    (
-      focusKey: SceneFocus,
-      field: "radius" | "polarDeg" | "azimuthDeg" | "lookAt",
-      value: number | [number, number, number]
-    ) => {
-      setFocusTargetConfigs((prev) => {
-        const current =
-          prev[focusKey] ?? {
-            radius: 5,
-            polarDeg: 60,
-            azimuthDeg: 30,
-            lookAt: [0, 0, 0],
-          };
-        return {
-          ...prev,
-          [focusKey]: {
-            ...current,
-            [field]: value,
-          },
-        };
-      });
-    },
-    []
-  );
-
-  const updateLookAt = useCallback(
-    (index: number, value: number) => {
-      if (!activeFocus || !activeFocusKey) return;
-      const nextLookAt: [number, number, number] = [...activeFocus.lookAt] as [number, number, number];
-      nextLookAt[index] = value;
-      handleUpdateFocusTarget(activeFocusKey, "lookAt", nextLookAt);
-    },
-    [activeFocus, activeFocusKey, handleUpdateFocusTarget]
-  );
 
   const addChapter = useCallback(() => {
     const newId = `chapter-${Math.random().toString(36).slice(2, 7)}`;
@@ -1170,13 +1307,23 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
     setOptionModelTarget({ chapterId, groupId, optionValue });
   }, []);
 
+  const visibilityTarget = useMemo(() => {
+    if (optionModelTarget) return optionModelTarget;
+    const chapter = orderedChapters.find((ch) => ch.id === activeChapterId) ?? orderedChapters[0];
+    const group = chapter?.groups[0];
+    if (!chapter || !group) return null;
+    const selectedOption = selections[group.id] || group.options[0]?.value;
+    if (!selectedOption) return null;
+    return { chapterId: chapter.id, groupId: group.id, optionValue: selectedOption };
+  }, [activeChapterId, optionModelTarget, orderedChapters, selections]);
+
   const optionModelVisibility = useMemo(() => {
-    if (!optionModelTarget) return {} as Record<string, boolean | undefined>;
-    const chapter = chapters.find((ch) => ch.id === optionModelTarget.chapterId);
-    const group = chapter?.groups.find((g) => g.id === optionModelTarget.groupId);
-    const option = group?.options.find((opt) => opt.value === optionModelTarget.optionValue);
+    if (!visibilityTarget) return {} as Record<string, boolean | undefined>;
+    const chapter = chapters.find((ch) => ch.id === visibilityTarget.chapterId);
+    const group = chapter?.groups.find((g) => g.id === visibilityTarget.groupId);
+    const option = group?.options.find((opt) => opt.value === visibilityTarget.optionValue);
     return option?.visibility ?? {};
-  }, [chapters, optionModelTarget]);
+  }, [chapters, visibilityTarget]);
 
   const totalPrice = useMemo(() => {
     let total = 0;
@@ -1192,8 +1339,8 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
 
   const handleToggleMeshVisibility = useCallback(
     (meshName: string) => {
-      if (!optionModelTarget) return;
-      const { chapterId, groupId, optionValue } = optionModelTarget;
+      if (!visibilityTarget) return;
+      const { chapterId, groupId, optionValue } = visibilityTarget;
       updateGroupOptions(chapterId, groupId, (options) =>
         options.map((opt) => {
           if (opt.value !== optionValue) return opt;
@@ -1205,7 +1352,47 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
         })
       );
     },
-    [optionModelTarget, updateGroupOptions]
+    [updateGroupOptions, visibilityTarget]
+  );
+
+  const handleKeepCurrentView = useCallback(() => {
+    if (!activeFocusKey || !orbitCameraState) return;
+    const position = new Vector3(...orbitCameraState.position);
+    const target = new Vector3(...orbitCameraState.target);
+    const offset = position.clone().sub(target);
+    const spherical = new Spherical().setFromVector3(offset);
+    setFocusTargetConfigs((prev) => ({
+      ...prev,
+      [activeFocusKey]: {
+        radius: spherical.radius,
+        polarDeg: MathUtils.radToDeg(spherical.phi),
+        azimuthDeg: MathUtils.radToDeg(spherical.theta),
+        lookAt: [target.x, target.y, target.z],
+      },
+    }));
+    setFocus(activeFocusKey);
+    setOrbitEnabled(false);
+  }, [activeFocusKey, orbitCameraState]);
+
+  const deriveCameraFromFocus = useCallback(
+    (focusKey: SceneFocus | undefined) => {
+      if (!focusKey) return null;
+      const targetConfig = focusTargetConfigs[focusKey];
+      if (!targetConfig) return null;
+      const target = new Vector3(...targetConfig.lookAt);
+      const spherical = new Spherical(
+        targetConfig.radius,
+        MathUtils.degToRad(targetConfig.polarDeg),
+        MathUtils.degToRad(targetConfig.azimuthDeg)
+      );
+      const offset = new Vector3().setFromSpherical(spherical);
+      const position = target.clone().add(offset);
+      return {
+        position: [position.x, position.y, position.z] as [number, number, number],
+        target: [target.x, target.y, target.z] as [number, number, number],
+      };
+    },
+    [focusTargetConfigs]
   );
 
   const priceBar = useMemo(
@@ -1248,7 +1435,7 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
   }, [isClient]);
 
   const handleFileInput = useCallback(
-    (event: React.ChangeEvent<HTMLInputElement>) => {
+    (event: ChangeEvent<HTMLInputElement>) => {
       const file = event.target.files?.[0];
       if (!file) return;
       const objectUrl = URL.createObjectURL(file);
@@ -1358,13 +1545,17 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
             <input
               className="w-full rounded-lg border border-white/10 bg-slate-900/70 px-3 py-2 text-sm uppercase tracking-[0.4em] text-white"
               value={heroDraft.kicker}
-              onChange={(e) => setHeroDraft((prev) => ({ ...prev, kicker: e.target.value }))}
+              onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                setHeroDraft((prev) => ({ ...prev, kicker: e.target.value }))
+              }
               placeholder="Kicker"
             />
             <input
               className="w-full rounded-lg border border-white/10 bg-slate-900/70 px-3 py-2 text-3xl font-semibold text-white"
               value={heroDraft.title}
-              onChange={(e) => setHeroDraft((prev) => ({ ...prev, title: e.target.value }))}
+              onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                setHeroDraft((prev) => ({ ...prev, title: e.target.value }))
+              }
               placeholder="Title"
             />
             <div className="space-y-2">
@@ -1373,7 +1564,7 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
                   <textarea
                     className="w-full rounded-lg border border-white/10 bg-slate-900/70 px-3 py-2 text-sm text-white"
                     value={paragraph}
-                    onChange={(e) =>
+                    onChange={(e: ChangeEvent<HTMLTextAreaElement>) =>
                       setHeroDraft((prev) => {
                         const next = [...prev.paragraphs];
                         next[index] = e.target.value;
@@ -1460,7 +1651,7 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
 
       <section className={mergedClasses.chaptersSection} aria-label="Configurator chapters">
         <div className={`${mergedClasses.canvasWrapper} relative`}>
-          {isDesignMode && activeChapter && activeFocus && activeFocusKey && (
+          {isDesignMode && activeChapter && activeFocusKey && (
             <div className="absolute left-3 top-3 z-30 w-[300px] space-y-3 rounded-2xl border border-white/15 bg-slate-900/80 p-3 text-white shadow-2xl backdrop-blur">
               <div className="flex items-center justify-between text-xs uppercase tracking-[0.25em] text-white/60">
                 <span>Camera</span>
@@ -1468,64 +1659,61 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
                   {activeFocusKey}
                 </span>
               </div>
-              <div className="space-y-2 text-sm text-white/80">
-                <label className="space-y-1">
-                  <span className="block text-[11px] uppercase tracking-[0.2em] text-white/50">Radius</span>
-                  <input
-                    type="number"
-                    step="0.1"
-                    value={activeFocus.radius}
-                    onChange={(e) =>
-                      handleUpdateFocusTarget(activeFocusKey, "radius", parseFloat(e.target.value))
-                    }
-                    className="w-full rounded-lg border border-white/10 bg-slate-900/70 px-3 py-2 text-sm text-white"
-                  />
-                </label>
-                <div className="grid grid-cols-2 gap-2">
-                  <label className="space-y-1">
-                    <span className="block text-[11px] uppercase tracking-[0.2em] text-white/50">Polar°</span>
-                    <input
-                      type="number"
-                      step="1"
-                      value={activeFocus.polarDeg}
-                      onChange={(e) =>
-                        handleUpdateFocusTarget(activeFocusKey, "polarDeg", parseFloat(e.target.value))
+              <div className="flex flex-col gap-2 text-sm text-white/80">
+                {!orbitEnabled && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const snapshot =
+                        orbitCameraState ?? preOrbitCameraState ?? deriveCameraFromFocus(activeFocusKey);
+                      if (snapshot) {
+                        setOrbitCameraState(snapshot);
+                        setPreOrbitCameraState(snapshot);
+                      } else {
+                        setPreOrbitCameraState(null);
                       }
-                      className="w-full rounded-lg border border-white/10 bg-slate-900/70 px-3 py-2 text-sm text-white"
-                    />
-                  </label>
-                  <label className="space-y-1">
-                    <span className="block text-[11px] uppercase tracking-[0.2em] text-white/50">Azimuth°</span>
-                    <input
-                      type="number"
-                      step="1"
-                      value={activeFocus.azimuthDeg}
-                      onChange={(e) =>
-                        handleUpdateFocusTarget(activeFocusKey, "azimuthDeg", parseFloat(e.target.value))
-                      }
-                      className="w-full rounded-lg border border-white/10 bg-slate-900/70 px-3 py-2 text-sm text-white"
-                    />
-                  </label>
-                </div>
-                <div className="space-y-1">
-                  <span className="block text-[11px] uppercase tracking-[0.2em] text-white/50">Look at</span>
-                  <div className="grid grid-cols-3 gap-2">
-                    {["X", "Y", "Z"].map((label, index) => (
-                      <input
-                        key={label}
-                        type="number"
-                        step="0.1"
-                        value={activeFocus.lookAt[index]}
-                        onChange={(e) => updateLookAt(index, parseFloat(e.target.value))}
-                        className="w-full rounded-lg border border-white/10 bg-slate-900/70 px-3 py-2 text-sm text-white"
-                        aria-label={`Look at ${label}`}
-                      />
-                    ))}
+                      setOrbitEnabled(true);
+                    }}
+                    className="rounded-full bg-white/10 px-3 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-white hover:bg-white/20"
+                  >
+                    Change camera
+                  </button>
+                )}
+                {orbitEnabled && (
+                  <div className="space-y-2">
+                    <p className="text-[11px] text-white/60">Use orbit to frame the shot.</p>
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const snapshot =
+                            preOrbitCameraState ?? deriveCameraFromFocus(activeFocusKey) ?? orbitCameraState;
+                          setOrbitCameraState(snapshot);
+                          setOrbitEnabled(false);
+                          setResetCameraToken((t) => t + 1);
+                        }}
+                        className="flex-1 rounded-full border border-white/20 bg-white/10 px-3 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-white hover:border-teal-300 hover:text-teal-100"
+                      >
+                        Reset
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleKeepCurrentView}
+                        disabled={!orbitCameraState}
+                        className={`flex-1 rounded-full px-3 py-2 text-xs font-semibold uppercase tracking-[0.2em] shadow ${
+                          orbitCameraState
+                            ? "bg-teal-400 text-slate-900 hover:bg-teal-300"
+                            : "bg-white/10 text-white/60"
+                        }`}
+                      >
+                        Keep this view
+                      </button>
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
               <p className="text-[11px] text-white/50">
-                Adjust camera focus for <span className="font-semibold text-white">{activeChapter.title}</span>.
+                Stored for <span className="font-semibold text-white">{activeChapter.title}</span>.
               </p>
             </div>
           )}
@@ -1560,6 +1748,14 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
             visibility={objectVisibility}
             focusTargets={focusTargets}
             gltfScene={gltfScene}
+            selectionEnabled={isDesignMode}
+            onToggleMesh={handleToggleMeshVisibility}
+            hoveredMeshName={hoveredMeshName}
+            onHoverMesh={setHoveredMeshName}
+            orbitEnabled={orbitEnabled}
+            onOrbitCameraChange={setOrbitCameraState}
+            orbitCameraState={orbitCameraState}
+            resetToken={resetCameraToken}
           />
         </div>
         {orderedChapters.map((chapter) => (
@@ -1579,13 +1775,17 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
                       <input
                         className="w-full rounded-lg border border-white/10 bg-slate-900/70 px-3 py-2 text-sm text-white"
                         value={(chapterDrafts[chapter.id]?.kicker as string | undefined) ?? chapter.kicker}
-                        onChange={(e) => updateChapterDraft(chapter.id, "kicker", e.target.value)}
+                        onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                          updateChapterDraft(chapter.id, "kicker", e.target.value)
+                        }
                         placeholder="Kicker"
                       />
                       <input
                         className="w-full rounded-lg border border-white/10 bg-slate-900/70 px-3 py-2 text-lg font-semibold text-white"
                         value={(chapterDrafts[chapter.id]?.title as string | undefined) ?? chapter.title}
-                        onChange={(e) => updateChapterDraft(chapter.id, "title", e.target.value)}
+                        onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                          updateChapterDraft(chapter.id, "title", e.target.value)
+                        }
                         placeholder="Title"
                       />
                       <textarea
@@ -1593,7 +1793,9 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
                         value={
                           (chapterDrafts[chapter.id]?.description as string | undefined) ?? chapter.description
                         }
-                        onChange={(e) => updateChapterDraft(chapter.id, "description", e.target.value)}
+                        onChange={(e: ChangeEvent<HTMLTextAreaElement>) =>
+                          updateChapterDraft(chapter.id, "description", e.target.value)
+                        }
                         placeholder="Description"
                         rows={3}
                       />
@@ -1688,13 +1890,17 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
                   <input
                     className="w-full rounded-lg border border-white/10 bg-slate-900/70 px-3 py-2 text-sm uppercase tracking-[0.4em] text-white"
                     value={closingDraft.kicker}
-                    onChange={(e) => setClosingDraft((prev) => ({ ...prev, kicker: e.target.value }))}
+                    onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                      setClosingDraft((prev) => ({ ...prev, kicker: e.target.value }))
+                    }
                     placeholder="Kicker"
                   />
                   <input
                     className="w-full rounded-lg border border-white/10 bg-slate-900/70 px-3 py-2 text-2xl font-semibold text-white"
                     value={closingDraft.title}
-                    onChange={(e) => setClosingDraft((prev) => ({ ...prev, title: e.target.value }))}
+                    onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                      setClosingDraft((prev) => ({ ...prev, title: e.target.value }))
+                    }
                     placeholder="Title"
                   />
                   <div className="space-y-2">
@@ -1703,7 +1909,7 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
                         <textarea
                           className="w-full rounded-lg border border-white/10 bg-slate-900/70 px-3 py-2 text-sm text-white"
                           value={paragraph}
-                          onChange={(e) =>
+                          onChange={(e: ChangeEvent<HTMLTextAreaElement>) =>
                             setClosingDraft((prev) => {
                               const next = [...prev.paragraphs];
                               next[index] = e.target.value;
