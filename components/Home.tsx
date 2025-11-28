@@ -13,6 +13,7 @@ export type RadioOption = {
   label: string;
   description: string;
   value: string;
+  price?: number;
   visibility?: Record<string, boolean>;
 };
 
@@ -120,6 +121,36 @@ const defaultClasses: HomeClassNames = {
 const ItemTypes = {
   CHAPTER: "chapter",
 };
+
+const currency = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
+
+function resolveModelUrl(src: string) {
+  if (src.startsWith("http://") || src.startsWith("https://")) return src;
+  if (typeof window !== "undefined") {
+    try {
+      return new URL(src, window.location.origin).toString();
+    } catch {
+      return src;
+    }
+  }
+  return src;
+}
+
+function normalizeConfigPrices(config: Config): Config {
+  return {
+    ...config,
+    chapters: config.chapters.map((chapter) => ({
+      ...chapter,
+      groups: chapter.groups.map((group) => ({
+        ...group,
+        options: group.options.map((option) => ({
+          ...option,
+          price: option.price ?? 0,
+        })),
+      })),
+    })),
+  };
+}
 
 type SceneFocus = keyof Config["scene"]["focusTargets"];
 type FocusTarget = { radius: number; polar: number; azimuth: number; lookAt: Vector3 };
@@ -235,9 +266,9 @@ function SingleModel({
   useEffect(() => {
     instance.traverse((child) => {
       if (child instanceof Mesh || child instanceof Object3D) {
-        if (visibility[child.name] !== undefined) {
-          child.visible = !!visibility[child.name];
-        }
+        // Default visible; override only when explicit visibility is provided for the current option.
+        child.visible = true;
+        if (visibility[child.name] !== undefined) child.visible = !!visibility[child.name];
       }
     });
   }, [instance, visibility]);
@@ -289,6 +320,9 @@ function ConfigRadioGroup({ title, helper, options, value, onChange }: ConfigRad
                 {option.label}
               </span>
               <span className="text-xs text-white/70">{option.description}</span>
+              <span className="text-xs font-semibold text-teal-200">
+                {currency.format(option.price ?? 0)}
+              </span>
             </label>
           );
         })}
@@ -297,7 +331,7 @@ function ConfigRadioGroup({ title, helper, options, value, onChange }: ConfigRad
   );
 }
 
-type OptionDraft = Pick<RadioOption, "label" | "description">;
+type OptionDraft = Pick<RadioOption, "label" | "description" | "price">;
 
 function EditableOptionRow({
   option,
@@ -306,6 +340,7 @@ function EditableOptionRow({
   onSelect,
   onDelete,
   onEdit,
+  onOpenModel,
 }: {
   option: RadioOption;
   name: string;
@@ -313,15 +348,20 @@ function EditableOptionRow({
   onSelect: () => void;
   onDelete: () => void;
   onEdit: (next: OptionDraft) => void;
+  onOpenModel: () => void;
 }) {
   const [isEditing, setIsEditing] = useState(false);
   const [draft, setDraft] = useState<OptionDraft>(() => ({
     label: option.label,
     description: option.description,
+    price: option.price ?? 0,
   }));
 
   const handleSave = () => {
-    onEdit(draft);
+    onEdit({
+      ...draft,
+      price: Number.isFinite(draft.price) ? draft.price : 0,
+    });
     setIsEditing(false);
   };
 
@@ -355,11 +395,21 @@ function EditableOptionRow({
                 onChange={(e) => setDraft((prev) => ({ ...prev, description: e.target.value }))}
                 placeholder="Description"
               />
+              <input
+                type="number"
+                className="w-full rounded-lg border border-white/10 bg-slate-900/70 px-3 py-2 text-sm text-white"
+                value={draft.price}
+                onChange={(e) =>
+                  setDraft((prev) => ({ ...prev, price: parseFloat(e.target.value) || 0 }))
+                }
+                placeholder="Price"
+              />
             </div>
           ) : (
             <div>
               <p className="text-sm font-semibold uppercase tracking-wide text-white">{option.label}</p>
               <p className="text-xs text-white/70">{option.description}</p>
+              <p className="text-xs font-semibold text-teal-200">{currency.format(option.price ?? 0)}</p>
             </div>
           )}
         </label>
@@ -385,9 +435,18 @@ function EditableOptionRow({
             type="button"
             onClick={isEditing ? () => setIsEditing(false) : onDelete}
             className="rounded-full border border-white/20 px-3 py-1 text-xs text-white hover:border-white/40"
-          >
-            {isEditing ? "Cancel" : "Delete"}
-          </button>
+            >
+              {isEditing ? "Cancel" : "Delete"}
+            </button>
+          {!isEditing && (
+            <button
+              type="button"
+              onClick={onOpenModel}
+              className="rounded-full border border-white/20 px-3 py-1 text-xs text-white hover:border-white/40"
+            >
+              Model
+            </button>
+          )}
         </div>
       </div>
     </div>
@@ -401,6 +460,7 @@ function EditableConfigGroup({
   onAdd,
   onDelete,
   onEdit,
+  onOpenModel,
 }: {
   group: ConfiguratorGroup;
   value: string;
@@ -408,6 +468,7 @@ function EditableConfigGroup({
   onAdd: () => void;
   onDelete: (optionValue: string) => void;
   onEdit: (originalValue: string, next: OptionDraft) => void;
+  onOpenModel: (optionValue: string) => void;
 }) {
   const name = useId();
 
@@ -438,6 +499,7 @@ function EditableConfigGroup({
             onSelect={() => onChange(option.value)}
             onDelete={() => onDelete(option.value)}
             onEdit={(next) => onEdit(option.value, next)}
+            onOpenModel={() => onOpenModel(option.value)}
           />
         ))}
       </div>
@@ -482,6 +544,75 @@ type DraggedChapter = {
   id: string;
   index: number;
 };
+
+type MeshTreeNode = {
+  name: string;
+  children: MeshTreeNode[];
+  isMesh: boolean;
+};
+
+function MeshTreeNodeView({
+  node,
+  visibility,
+  onToggle,
+}: {
+  node: MeshTreeNode;
+  visibility: Record<string, boolean | undefined>;
+  onToggle: (meshName: string) => void;
+}) {
+  const checked = visibility[node.name] !== false;
+  const hasChildren = node.children.length > 0;
+  return (
+    <div className="space-y-1 rounded-lg border border-white/5 bg-white/5 p-2">
+      {node.isMesh && (
+        <label className="flex items-center gap-2 text-sm">
+          <input
+            type="checkbox"
+            checked={checked}
+            onChange={() => onToggle(node.name)}
+            className="h-4 w-4 accent-teal-300"
+          />
+          <span className="text-white">{node.name}</span>
+        </label>
+      )}
+      {!node.isMesh && node.name && (
+        <p className="text-xs uppercase tracking-[0.2em] text-white/50">{node.name}</p>
+      )}
+      {!node.isMesh && hasChildren && (
+        <div className="space-y-1 pl-3">
+          {node.children.map((child, index) => (
+            <MeshTreeNodeView
+              key={`${child.name}-${index}`}
+              node={child}
+              visibility={visibility}
+              onToggle={onToggle}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function buildMeshTree(node: Object3D, counter: { current: number }): MeshTreeNode | null {
+  const children = node.children
+    .map((child) => buildMeshTree(child, counter))
+    .filter(Boolean) as MeshTreeNode[];
+  const isMesh = node instanceof Mesh;
+  let label = node.name;
+  if (isMesh) {
+    if (!label || /^default_material/i.test(label) || /^material/i.test(label)) {
+      label = `Mesh ${counter.current}`;
+    }
+    counter.current += 1;
+  }
+  if (!label && !children.length) return null;
+  return {
+    name: label || "(group)",
+    children,
+    isMesh,
+  };
+}
 
 function DraggableChapterItem({
   chapter,
@@ -575,6 +706,11 @@ function DesignSidebar({
   onDeleteChapter,
   mode,
   onModeChange,
+  meshTree,
+  optionModelTarget,
+  onCloseModel,
+  onToggleMesh,
+  optionVisibility,
 }: {
   chapters: Config["chapters"];
   moveChapter: (from: number, to: number) => void;
@@ -589,6 +725,11 @@ function DesignSidebar({
   onDeleteChapter: (chapterId: string) => void;
   mode: "design" | "preview";
   onModeChange: (mode: "design" | "preview") => void;
+  meshTree: MeshTreeNode[];
+  optionModelTarget: string | null;
+  onCloseModel: () => void;
+  onToggleMesh: (meshName: string) => void;
+  optionVisibility: Record<string, boolean | undefined>;
 }) {
   const activeChapter = chapters.find((chapter) => chapter.id === activeChapterId) ?? chapters[0];
   const activeFocusKey = activeChapter?.focus as SceneFocus | undefined;
@@ -730,6 +871,37 @@ function DesignSidebar({
           </div>
         </div>
       )}
+
+      {optionModelTarget && (
+        <div className="mt-6 rounded-2xl border border-white/10 bg-slate-900/60 p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs uppercase tracking-[0.3em] text-white/50">Model visibility</p>
+              <h4 className="text-sm font-semibold text-white">{optionModelTarget}</h4>
+            </div>
+            <button
+              type="button"
+              onClick={onCloseModel}
+              className="rounded-full border border-white/20 px-3 py-1 text-xs text-white hover:border-white/40"
+            >
+              Close
+            </button>
+          </div>
+          <div className="mt-4 max-h-72 space-y-2 overflow-auto text-sm text-white/80">
+            {meshTree.map((node) => (
+              <MeshTreeNodeView
+                key={node.name}
+                node={node}
+                visibility={optionVisibility}
+                onToggle={onToggleMesh}
+              />
+            ))}
+          </div>
+          <p className="mt-2 text-[11px] text-white/50">
+            Toggle meshes this option controls. Unlisted meshes are untouched.
+          </p>
+        </div>
+      )}
     </aside>
   );
 }
@@ -790,6 +962,19 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
   const [closingDraft, setClosingDraft] = useState(closing);
   const [isEditingHero, setIsEditingHero] = useState(false);
   const [isEditingClosing, setIsEditingClosing] = useState(false);
+  const [optionModelTarget, setOptionModelTarget] = useState<{
+    chapterId: string;
+    groupId: string;
+    optionValue: string;
+  } | null>(null);
+  const sidebarModelUrl = useMemo(() => resolveModelUrl(sceneModel.src), [sceneModel.src]);
+  const gltfForSidebar = useGLTF(sidebarModelUrl);
+  const meshTree = useMemo(() => {
+    const scene = gltfForSidebar?.scene;
+    if (!scene) return [] as MeshTreeNode[];
+    const counter = { current: 1 };
+    return scene.children.map((child) => buildMeshTree(child, counter)).filter(Boolean) as MeshTreeNode[];
+  }, [gltfForSidebar?.scene]);
 
   const moveChapter = useCallback((fromIndex: number, toIndex: number) => {
     setChapterOrder((prev) => {
@@ -923,6 +1108,7 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
         label: "New option",
         description: "Describe this option",
         value: `option-${Math.random().toString(36).slice(2, 7)}`,
+        price: 0,
       };
       updateGroupOptions(chapterId, groupId, (options) => [...options, newOption]);
     },
@@ -1011,7 +1197,7 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
       updateGroupOptions(chapterId, groupId, (options) =>
         options.map((opt) =>
           opt.value === originalValue
-            ? { ...opt, label: next.label, description: next.description }
+            ? { ...opt, label: next.label, description: next.description, price: next.price ?? 0 }
             : opt
         )
       );
@@ -1026,9 +1212,71 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
     [updateGroupOptions]
   );
 
+  const openOptionModelEditor = useCallback((chapterId: string, groupId: string, optionValue: string) => {
+    setOptionModelTarget({ chapterId, groupId, optionValue });
+  }, []);
+
+  const optionModelVisibility = useMemo(() => {
+    if (!optionModelTarget) return {} as Record<string, boolean | undefined>;
+    const chapter = chapters.find((ch) => ch.id === optionModelTarget.chapterId);
+    const group = chapter?.groups.find((g) => g.id === optionModelTarget.groupId);
+    const option = group?.options.find((opt) => opt.value === optionModelTarget.optionValue);
+    return option?.visibility ?? {};
+  }, [chapters, optionModelTarget]);
+
+  const totalPrice = useMemo(() => {
+    let total = 0;
+    orderedChapters.forEach((chapter) => {
+      chapter.groups.forEach((group) => {
+        const selected = selections[group.id];
+        const option = group.options.find((opt) => opt.value === selected);
+        total += option?.price ?? 0;
+      });
+    });
+    return total;
+  }, [orderedChapters, selections]);
+
+  const handleToggleMeshVisibility = useCallback(
+    (meshName: string) => {
+      if (!optionModelTarget) return;
+      const { chapterId, groupId, optionValue } = optionModelTarget;
+      updateGroupOptions(chapterId, groupId, (options) =>
+        options.map((opt) => {
+          if (opt.value !== optionValue) return opt;
+          const visibility = { ...(opt.visibility ?? {}) };
+          const current = visibility[meshName];
+          const nextState = current === false ? true : false; // default visible, toggle to hidden
+          visibility[meshName] = nextState;
+          return { ...opt, visibility };
+        })
+      );
+    },
+    [optionModelTarget, updateGroupOptions]
+  );
+
+  const priceBar = useMemo(
+    () => (
+      <div className="fixed bottom-4 left-1/2 z-40 w-full max-w-4xl -translate-x-1/2 px-4">
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-white/10 bg-slate-900/90 px-5 py-3 text-sm text-white/80 shadow-2xl backdrop-blur">
+          <div>
+            <span className="text-xs uppercase tracking-[0.2em] text-white/50">Total</span>
+            <span className="ml-2 text-lg font-semibold text-white">{currency.format(totalPrice)}</span>
+          </div>
+          <button
+            type="button"
+            className="rounded-full bg-teal-400 px-5 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-slate-900 shadow hover:bg-teal-300"
+          >
+            Buy now
+          </button>
+        </div>
+      </div>
+    ),
+    [totalPrice]
+  );
+
   useEffect(() => {
-    useGLTF.preload(sceneModel.src);
-  }, [sceneModel.src]);
+    useGLTF.preload(sidebarModelUrl);
+  }, [sidebarModelUrl]);
 
   useEffect(() => {
     if (!orderedChapters.length) return;
@@ -1085,7 +1333,7 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
   }, [orderedChapters, selections]);
 
   const content = (
-    <div className="space-y-16">
+    <div className="space-y-16 pb-28">
       {!isDesignMode && (
         <div className="flex justify-end">
           <div className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/5 p-1 text-xs uppercase tracking-[0.3em] text-white/60 shadow-2xl">
@@ -1320,6 +1568,9 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
                     onEdit={(originalValue, next) =>
                       handleEditOption(chapter.id, group.id, originalValue, next)
                     }
+                    onOpenModel={(optionValue) =>
+                      openOptionModelEditor(chapter.id, group.id, optionValue)
+                    }
                   />
                 ) : (
                   <ConfigRadioGroup
@@ -1456,7 +1707,7 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
       <div className={mergedClasses.root}>
         {isDesignMode ? (
           <div className="flex w-full gap-10 px-6 py-16">
-            <div className="w-[320px] shrink-0">
+            <div className="w-[320px] shrink-0 pb-28">
               <DesignSidebar
                 chapters={orderedChapters}
                 moveChapter={moveChapter}
@@ -1467,23 +1718,30 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
                 onDeleteChapter={deleteChapter}
                 mode={mode}
                 onModeChange={setMode}
+                meshTree={meshTree}
+                optionModelTarget={optionModelTarget?.optionValue ?? null}
+                onCloseModel={() => setOptionModelTarget(null)}
+                onToggleMesh={handleToggleMeshVisibility}
+                optionVisibility={optionModelVisibility}
               />
             </div>
-            <main className="flex-1 space-y-16">{content}</main>
+            <main className="flex-1 space-y-6 pb-28">{content}</main>
           </div>
         ) : (
           <main className={mergedClasses.main}>{content}</main>
         )}
+        {priceBar}
       </div>
     </DndProvider>
   );
 }
 
 export default function Home({ config: configProp, classNames }: HomeProps) {
-  const config = useMemo(() => configProp ?? defaultConfig, [configProp]);
-  const configKey = useMemo(() => JSON.stringify(config), [config]);
+  const baseConfig = useMemo(() => configProp ?? defaultConfig, [configProp]);
+  const normalizedConfig = useMemo(() => normalizeConfigPrices(baseConfig), [baseConfig]);
+  const configKey = useMemo(() => JSON.stringify(normalizedConfig), [normalizedConfig]);
 
-  return <HomeContent key={configKey} config={config} classNames={classNames} />;
+  return <HomeContent key={configKey} config={normalizedConfig} classNames={classNames} />;
 }
 
 export { defaultConfig, defaultClasses };

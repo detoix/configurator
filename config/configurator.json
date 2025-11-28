@@ -1,10 +1,10 @@
 {
   "hero": {
-    "kicker": "Automata Concept Lab",
-    "title": "A four-act journey through a configurable 3D concept build",
+    "kicker": "Orbital Defense Lab",
+    "title": "Configure the RX-9 Modular Sci‑Fi Turret",
     "paragraphs": [
-      "Designing an expressive machine requires more than a static hero shot. This hero section behaves like any editorial page. Scroll, skim, or read every line: the intent is to set the tone and explain why we obsess over digital craftsmanship before the first bolt ever exists in the real world.",
-      "Our configurator is split into chapters. First, we cover narrative and vision: the ethos behind the Automata bodywork, the raw sketches, and the material palette. We talk about proportion, stance, aerodynamic management, and the ergonomic cues that allow the cabin to feel both lounge-like and purposeful. We also outline the sound design philosophy, the robotics-inspired HMI, and the sustainability roadmap for low-volume production."
+      "A frontline turret should be tailored to mission profiles, not frozen in a catalog. This configurator lets you sculpt shielding, weapon modules, optics, and drive systems with instant visual feedback on the 3D build.",
+      "Each chapter locks in a different combat layer—armor tone, barrel arrays, power routing, AI assists, and movement. Dial in a variant for perimeter defense, vehicle mounting, or autonomous patrol without waiting on another render pass."
     ]
   },
   "scene": {
@@ -13,40 +13,20 @@
         "radius": 7,
         "polarDeg": 60,
         "azimuthDeg": 35,
-        "lookAt": [
-          0,
-          0.6,
-          0
-        ]
+        "lookAt": [0, 0.6, 0]
       },
       "detail": {
         "radius": 7,
         "polarDeg": 52,
         "azimuthDeg": -60,
-        "lookAt": [
-          0,
-          0.8,
-          0
-        ]
+        "lookAt": [0, 0.8, 0]
       }
     },
     "model": {
       "src": "/sci_fi_turret.glb",
-      "position": [
-        0,
-        -1.2,
-        0
-      ],
-      "rotationDeg": [
-        0,
-        0,
-        0
-      ],
-      "scale": [
-        0.02,
-        0.02,
-        0.02
-      ]
+      "position": [0, -1.2, 0],
+      "rotationDeg": [0, 0, 0],
+      "scale": [0.02, 0.02, 0.02]
     }
   },
   "chapters": [
@@ -54,196 +34,173 @@
       "id": "exterior",
       "focus": "overview",
       "kicker": "Chapter 02",
-      "title": "Exterior Identity Stack",
-      "description": "Lock in the silhouette before moving to dynamics. Each radio menu represents a visual micro-decision that would normally require a render farm—here it is immediate.",
+      "title": "Chassis & Armor Stack",
+      "description": "Set the visual ID for the turret shell—composites, coatings, accents, and badging tuned for hostile environments.",
       "groups": [
         {
           "id": "paint-finish",
-          "title": "Paint Finish",
-          "helper": "Dial in the shell character by mixing matte and pearlescent coats.",
+          "title": "Armor Finish",
+          "helper": "Blend stealth coatings with thermal-reactive layers for your deployment zone.",
           "options": [
             {
-              "label": "Glacier",
-              "description": "Cool pearl white base",
+              "label": "Cryo Alloy",
+              "description": "Low-signature pearl titanium",
               "value": "glacier",
-              "visibility": {
-                "xd": true,
-                "Cube": false
-              }
+              "visibility": { "xd": true, "Cube": false },
+              "price": 1824
             },
             {
-              "label": "Obsidian",
-              "description": "Low sheen matte black",
+              "label": "Obsidian Veil",
+              "description": "Radar-damp matte basalt",
               "value": "obsidian",
-              "visibility": {
-                "xd": true,
-                "Cube": true
-              }
+              "visibility": { "xd": true, "Cube": true },
+              "price": 4759
             },
             {
               "label": "Copperline",
-              "description": "Burnished metallic orange",
+              "description": "Reactive ember composite",
               "value": "copper",
-              "visibility": {
-                "xd": false,
-                "Cube": true
-              }
+              "visibility": { "xd": false, "Cube": true },
+              "price": 4931
             },
             {
-              "label": "Cerulean",
-              "description": "Deep electric blue",
+              "label": "Cerulean Flux",
+              "description": "Iridescent field-reflective skin",
               "value": "cerulean",
               "visibility": {
                 "concept-shell": true,
                 "accent-left": false,
                 "accent-right": true,
                 "spoiler": true
-              }
+              },
+              "price": 4572
             }
           ]
         },
         {
           "id": "wheel-design",
-          "title": "Wheel Design",
-          "helper": "Pick spoke geometry engineered for airflow and brake cooling.",
+          "title": "Accent Rails",
+          "helper": "Define cooling rails and side panel geometry for heat shedding and visual silhouette.",
           "options": [
             {
-              "label": "Vortex",
-              "description": "Turbine-inspired",
+              "label": "Vortex Rails",
+              "description": "Spun heat-vane profile",
               "value": "vortex",
-              "visibility": {
-                "accent-left": true,
-                "accent-right": true
-              }
+              "visibility": { "accent-left": true, "accent-right": true },
+              "price": 940
             },
             {
-              "label": "Segment",
-              "description": "Five-spoke classic",
+              "label": "Segment Rails",
+              "description": "Segmented armor slabs",
               "value": "segment",
-              "visibility": {
-                "accent-left": false,
-                "accent-right": false
-              }
+              "visibility": { "accent-left": false, "accent-right": false },
+              "price": 959
             },
             {
-              "label": "Ribbon",
-              "description": "Ultra-light carbon",
+              "label": "Ribbon Rails",
+              "description": "Carbon lattice cooling",
               "value": "ribbon",
-              "visibility": {
-                "accent-left": true,
-                "accent-right": false
-              }
+              "visibility": { "accent-left": true, "accent-right": false },
+              "price": 2987
             },
             {
-              "label": "Halo",
-              "description": "Full dish aero",
+              "label": "Halo Rails",
+              "description": "Sealed dish aero skins",
               "value": "halo",
-              "visibility": {
-                "accent-left": false,
-                "accent-right": true
-              }
+              "visibility": { "accent-left": false, "accent-right": true },
+              "price": 4123
             }
           ]
         },
         {
           "id": "roof-profile",
-          "title": "Roof Profile",
-          "helper": "Balance transparency and acoustic insulation.",
+          "title": "Sensor Hood",
+          "helper": "Choose canopy profiles for optics, comms, and drone coupling.",
           "options": [
             {
-              "label": "Panorama",
-              "description": "Electrochromic glass",
+              "label": "Panorama Hood",
+              "description": "Electrochromic viewport",
               "value": "panorama",
-              "visibility": {
-                "spoiler": false
-              }
+              "visibility": { "spoiler": false },
+              "price": 3319
             },
             {
-              "label": "Contour",
-              "description": "Tinted structural ridge",
+              "label": "Contour Hood",
+              "description": "Armored ridge with vents",
               "value": "contour",
-              "visibility": {
-                "spoiler": true
-              }
+              "visibility": { "spoiler": true },
+              "price": 4467
             },
             {
-              "label": "Stealth",
-              "description": "Carbon blackout",
+              "label": "Stealth Hood",
+              "description": "Carbon blackout shroud",
               "value": "stealth",
               "visibility": {
                 "spoiler": true,
                 "accent-left": false,
                 "accent-right": false
-              }
+              },
+              "price": 985
             }
           ]
         },
         {
           "id": "light-signature",
-          "title": "Light Signature",
-          "helper": "Define the character line for the running lights.",
+          "title": "Beacon & ID",
+          "helper": "Configure perimeter lights and IFF strobes.",
           "options": [
             {
-              "label": "Pulse",
-              "description": "Animated sequential",
+              "label": "Pulse Beacon",
+              "description": "Sequential threat sweep",
               "value": "pulse",
-              "visibility": {
-                "accent-left": true,
-                "accent-right": true
-              }
+              "visibility": { "accent-left": true, "accent-right": true },
+              "price": 4775
             },
             {
-              "label": "Compass",
-              "description": "Horizontal + vertical beams",
+              "label": "Compass Beacon",
+              "description": "Cross-axis nav beams",
               "value": "compass",
-              "visibility": {
-                "accent-left": true,
-                "accent-right": false
-              }
+              "visibility": { "accent-left": true, "accent-right": false },
+              "price": 1648
             },
             {
-              "label": "Crescent",
-              "description": "Swept arc motif",
+              "label": "Crescent Beacon",
+              "description": "Arc-pattern status glow",
               "value": "crescent",
-              "visibility": {
-                "accent-left": false,
-                "accent-right": true
-              }
+              "visibility": { "accent-left": false, "accent-right": true },
+              "price": 655
             }
           ]
         },
         {
           "id": "badging",
-          "title": "Badging",
-          "helper": "Match the trim and finish to your story.",
+          "title": "Insignia",
+          "helper": "Match faction tags and finish with your deployment.",
           "options": [
             {
-              "label": "Chrome",
-              "description": "Classic mirror finish",
+              "label": "Chrome Crest",
+              "description": "High-polish command emblem",
               "value": "chrome",
-              "visibility": {
-                "accent-left": false,
-                "accent-right": false
-              }
+              "visibility": { "accent-left": false, "accent-right": false },
+              "price": 2242
             },
             {
-              "label": "Shadow",
-              "description": "Smoked aluminum",
+              "label": "Shadow Crest",
+              "description": "Smoked alloy sigil",
               "value": "shadow",
-              "visibility": {
-                "accent-left": true,
-                "accent-right": true
-              }
+              "visibility": { "accent-left": true, "accent-right": true },
+              "price": 1204
             },
             {
-              "label": "Copper",
-              "description": "Warm metallic accent",
+              "label": "Copper Crest",
+              "description": "Heated copper inlay",
               "value": "badge-copper",
               "visibility": {
                 "accent-left": true,
                 "accent-right": false,
                 "spoiler": true
-              }
+              },
+              "price": 4584
             }
           ]
         }
@@ -253,145 +210,138 @@
       "id": "dynamics",
       "focus": "detail",
       "kicker": "Chapter 03",
-      "title": "Dynamics, Feel, & Systems",
-      "description": "The camera drifts toward the aero channels and intake surfaces, hinting at what changes as you tune the digital chassis. Everything remains the same scene—only the vantage point shifts to prioritize motion cues.",
+      "title": "Systems & Weaponry",
+      "description": "Shift the camera to the weapon deck and actuator bays while you tune drive logic, recoil management, and assist layers.",
       "groups": [
         {
           "id": "drive-mode",
-          "title": "Drive Mode",
-          "helper": "Shape throttle, damping, and aero mapping.",
+          "title": "Fire Control Mode",
+          "helper": "Balance recoil vectoring, cooling cadence, and target priority.",
           "options": [
             {
-              "label": "Tour",
-              "description": "Comfort-first response",
+              "label": "Guardian",
+              "description": "Sentry posture, low aggression",
               "value": "tour",
               "visibility": {
                 "accent-left": false,
                 "accent-right": false,
                 "spoiler": false
-              }
+              },
+              "price": 2617
             },
             {
               "label": "Vector",
-              "description": "Adaptive daily tuning",
+              "description": "Adaptive engagement logic",
               "value": "vector",
-              "visibility": {
-                "accent-left": true,
-                "accent-right": true
-              }
+              "visibility": { "accent-left": true, "accent-right": true },
+              "price": 2187
             },
             {
-              "label": "Pulse",
-              "description": "Track telemetry lock",
+              "label": "Pulse Strike",
+              "description": "High-cycle, tracked burst",
               "value": "pulse-mode",
               "visibility": {
                 "accent-left": true,
                 "accent-right": false,
                 "spoiler": true
-              }
+              },
+              "price": 1837
             }
           ]
         },
         {
           "id": "steering-feel",
-          "title": "Steering Feel",
-          "helper": "Blend rack ratio with active rear steer.",
+          "title": "Traverse Feel",
+          "helper": "Set turret rotation resistance and micro-step precision.",
           "options": [
             {
-              "label": "Feather",
-              "description": "Light, long distance biased",
+              "label": "Feather Glide",
+              "description": "Ultra-light pan for scouts",
               "value": "feather",
-              "visibility": {
-                "accent-left": false,
-                "accent-right": true
-              }
+              "visibility": { "accent-left": false, "accent-right": true },
+              "price": 2515
             },
             {
-              "label": "Balance",
-              "description": "Neutral resistance",
+              "label": "Balanced Lock",
+              "description": "Neutral torque profile",
               "value": "balance",
-              "visibility": {
-                "accent-left": true,
-                "accent-right": true
-              }
+              "visibility": { "accent-left": true, "accent-right": true },
+              "price": 2311
             },
             {
-              "label": "Carbon",
-              "description": "High feedback sport",
+              "label": "Carbon Grip",
+              "description": "High resistance, sniper bias",
               "value": "carbon",
               "visibility": {
                 "accent-left": true,
                 "accent-right": false,
                 "spoiler": true
-              }
+              },
+              "price": 3432
             }
           ]
         },
         {
           "id": "suspension",
-          "title": "Suspension",
-          "helper": "Control ride height and magnetorheological damping.",
+          "title": "Mount Damping",
+          "helper": "Control elevation damping and platform stability.",
           "options": [
             {
-              "label": "Adaptive",
-              "description": "Self-leveling every 4ms",
+              "label": "Adaptive Mount",
+              "description": "Auto-level under recoil",
               "value": "adaptive",
-              "visibility": {
-                "accent-left": false,
-                "accent-right": false
-              }
+              "visibility": { "accent-left": false, "accent-right": false },
+              "price": 2631
             },
             {
-              "label": "Apex",
-              "description": "Low stance + stiff damper",
+              "label": "Apex Mount",
+              "description": "Rigid stance for heavy barrages",
               "value": "apex",
-              "visibility": {
-                "accent-left": true,
-                "accent-right": true
-              }
+              "visibility": { "accent-left": true, "accent-right": true },
+              "price": 1365
             },
             {
-              "label": "Summit",
-              "description": "Raised for rough surfaces",
+              "label": "Summit Mount",
+              "description": "Raised for uneven terrain",
               "value": "summit",
               "visibility": {
                 "accent-left": false,
                 "accent-right": true,
                 "spoiler": true
-              }
+              },
+              "price": 4369
             }
           ]
         },
         {
           "id": "assist-suite",
           "title": "Assist Suite",
-          "helper": "Tune how much autonomy overlays the drive.",
+          "helper": "Blend autonomy layers with operator control.",
           "options": [
             {
-              "label": "Guardian",
-              "description": "Hands-on augmented HUD",
+              "label": "Guardian AI",
+              "description": "HUD overlay and smart arcs",
               "value": "guardian",
-              "visibility": {
-                "Cone": true
-              }
+              "visibility": { "Cone": true },
+              "price": 2424
             },
             {
-              "label": "Pilot",
-              "description": "Level 3 commute focus",
+              "label": "Pilot AI",
+              "description": "Semi-autonomous tracking",
               "value": "pilot",
-              "visibility": {
-                "Cone": false
-              }
+              "visibility": { "Cone": false },
+              "price": 2792
             },
             {
-              "label": "Off",
-              "description": "Pure mechanical control",
+              "label": "Manual",
+              "description": "Pure operator control",
               "value": "off",
               "visibility": {
                 "accent-left": false,
                 "accent-right": false,
                 "spoiler": false
-              }
+              },
+              "price": 1185
             }
           ]
         }
@@ -400,11 +350,11 @@
   ],
   "closing": {
     "kicker": "Chapter 04",
-    "title": "Launch narrative & closing remarks",
+    "title": "Deploy the RX-9",
     "paragraphs": [
-      "With the heavy lifting done, this final block returns to traditional scrolling content. Here we outline go-to-market considerations, homologation pathways, and fabrication partners. The sticky scene releases, reminding visitors they are back in the narrative world and ready for next steps.",
-      "We typically pair this section with press-ready copy, executive quotes, and a lead form. Because you just walked through an interactive story, the conversation starters here are already elevated—whether you are pitching an investor, onboarding a supplier, or inviting early adopters.",
-      "Want to take it further? Swap the box for your asset, stream CMS-driven attributes into the radio menus, and connect the selections to a pricing or BOM table. The framework is ready for production; this page simply proves the interactions feel intuitive before you scale."
+      "Lock your turret build and export it into your pipeline—fleet planners can attach it to vehicle hardpoints, base emplacements, or autonomous crawlers.",
+      "Pair this spec with your ops doc: power budget, recoil envelope, ammo chain, and telemetry endpoints. Because pricing is live, procurement can green-light without another PDF sprint.",
+      "Ready to launch? Push this configuration to your team or trigger the next workflow—the RX-9 is staged for production once you commit."
     ]
   }
 }
