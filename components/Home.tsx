@@ -325,63 +325,70 @@ function EditableOptionRow({
     setIsEditing(false);
   };
 
+  const cardClass =
+    checked
+      ? "border-teal-400 bg-teal-400/10 text-white"
+      : "border-white/10 bg-white/5 text-white/80 hover:border-white/20";
+
   return (
-    <div className="flex items-start gap-3 rounded-2xl border border-white/10 bg-white/5 p-3">
-      <input
-        type="radio"
-        name={name}
-        checked={checked}
-        onChange={onSelect}
-        className="mt-1 h-4 w-4 accent-teal-300"
-      />
-      <div className="flex-1 space-y-2">
-        {isEditing ? (
-          <div className="space-y-2">
-            <input
-              className="w-full rounded-lg border border-white/10 bg-slate-900/70 px-3 py-2 text-sm text-white"
-              value={draft.label}
-              onChange={(e) => setDraft((prev) => ({ ...prev, label: e.target.value }))}
-              placeholder="Label"
-            />
-            <input
-              className="w-full rounded-lg border border-white/10 bg-slate-900/70 px-3 py-2 text-sm text-white"
-              value={draft.description}
-              onChange={(e) => setDraft((prev) => ({ ...prev, description: e.target.value }))}
-              placeholder="Description"
-            />
-          </div>
-        ) : (
-          <div>
-            <p className="text-sm font-semibold uppercase tracking-wide text-white">{option.label}</p>
-            <p className="text-xs text-white/70">{option.description}</p>
-          </div>
-        )}
-      </div>
-      <div className="flex flex-col gap-2">
-        {isEditing ? (
+    <div className={`flex flex-col gap-3 rounded-2xl border px-4 py-3 transition ${cardClass}`}>
+      <div className="flex items-start justify-between gap-3">
+        <label className="flex flex-1 cursor-pointer items-start gap-3" onClick={onSelect}>
+          <input
+            type="radio"
+            name={name}
+            checked={checked}
+            onChange={onSelect}
+            className="mt-1 h-4 w-4 accent-teal-300"
+          />
+          {isEditing ? (
+            <div className="flex-1 space-y-2">
+              <input
+                className="w-full rounded-lg border border-white/10 bg-slate-900/70 px-3 py-2 text-sm text-white"
+                value={draft.label}
+                onChange={(e) => setDraft((prev) => ({ ...prev, label: e.target.value }))}
+                placeholder="Label"
+              />
+              <input
+                className="w-full rounded-lg border border-white/10 bg-slate-900/70 px-3 py-2 text-sm text-white"
+                value={draft.description}
+                onChange={(e) => setDraft((prev) => ({ ...prev, description: e.target.value }))}
+                placeholder="Description"
+              />
+            </div>
+          ) : (
+            <div>
+              <p className="text-sm font-semibold uppercase tracking-wide text-white">{option.label}</p>
+              <p className="text-xs text-white/70">{option.description}</p>
+            </div>
+          )}
+        </label>
+        <div className="flex flex-col gap-2">
+          {isEditing ? (
+            <button
+              type="button"
+              onClick={handleSave}
+              className="rounded-full bg-teal-400 px-3 py-1 text-xs font-semibold text-slate-900"
+            >
+              Save
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setIsEditing(true)}
+              className="rounded-full border border-white/20 px-3 py-1 text-xs text-white hover:border-white/40"
+            >
+              Edit
+            </button>
+          )}
           <button
             type="button"
-            onClick={handleSave}
-            className="rounded-full bg-teal-400 px-3 py-1 text-xs font-semibold text-slate-900"
-          >
-            Save
-          </button>
-        ) : (
-          <button
-            type="button"
-            onClick={() => setIsEditing(true)}
+            onClick={isEditing ? () => setIsEditing(false) : onDelete}
             className="rounded-full border border-white/20 px-3 py-1 text-xs text-white hover:border-white/40"
           >
-            Edit
+            {isEditing ? "Cancel" : "Delete"}
           </button>
-        )}
-        <button
-          type="button"
-          onClick={isEditing ? () => setIsEditing(false) : onDelete}
-          className="rounded-full border border-white/20 px-3 py-1 text-xs text-white hover:border-white/40"
-        >
-          {isEditing ? "Cancel" : "Delete"}
-        </button>
+        </div>
       </div>
     </div>
   );
@@ -421,7 +428,7 @@ function EditableConfigGroup({
           Add
         </button>
       </div>
-      <div className="mt-5 space-y-3">
+      <div className="mt-5 grid gap-3 md:grid-cols-2">
         {group.options.map((option) => (
           <EditableOptionRow
             key={`${option.value}-${option.label}-${option.description}`}
@@ -480,10 +487,14 @@ function DraggableChapterItem({
   chapter,
   index,
   moveChapter,
+  onDelete,
+  active,
 }: {
   chapter: Config["chapters"][number];
   index: number;
   moveChapter: (from: number, to: number) => void;
+  onDelete: (id: string) => void;
+  active: boolean;
 }) {
   const ref = useRef<HTMLDivElement | null>(null);
 
@@ -523,17 +534,33 @@ function DraggableChapterItem({
     drag(drop(node));
   }, [drag, drop]);
 
+  const cardClass = active
+    ? "border-teal-400 bg-teal-400/15 text-white"
+    : "border-white/10 bg-white/5 text-white/80 hover:border-white/20";
+
   return (
     <div
       ref={ref}
-      className="flex cursor-move items-center justify-between rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white/80 shadow-sm transition hover:border-white/20"
+      className={`flex cursor-move items-center justify-between rounded-xl border px-3 py-2 text-sm shadow-sm transition ${cardClass}`}
       style={{ opacity: isDragging ? 0.5 : 1 }}
     >
       <span className="flex items-center gap-2">
         <span className="h-1.5 w-1.5 rounded-full bg-teal-300" aria-hidden />
         {chapter.title}
       </span>
-      <span className="text-xs uppercase tracking-[0.2em] text-white/40">{chapter.kicker}</span>
+      <div className="flex items-center gap-2">
+        <span className="text-xs uppercase tracking-[0.2em] text-white/40">{chapter.kicker}</span>
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onDelete(chapter.id);
+          }}
+          className="rounded-full border border-white/20 px-2 py-1 text-[10px] uppercase tracking-[0.2em] text-white hover:border-red-300 hover:text-red-200"
+        >
+          Delete
+        </button>
+      </div>
     </div>
   );
 }
@@ -541,12 +568,63 @@ function DraggableChapterItem({
 function DesignSidebar({
   chapters,
   moveChapter,
+  activeChapterId,
+  focusTargetConfigs,
+  onUpdateFocusTarget,
+  onAddChapter,
+  onDeleteChapter,
+  mode,
+  onModeChange,
 }: {
   chapters: Config["chapters"];
   moveChapter: (from: number, to: number) => void;
+  activeChapterId: string | null;
+  focusTargetConfigs: Config["scene"]["focusTargets"];
+  onUpdateFocusTarget: (
+    focusKey: SceneFocus,
+    field: "radius" | "polarDeg" | "azimuthDeg" | "lookAt",
+    value: number | [number, number, number]
+  ) => void;
+  onAddChapter: () => void;
+  onDeleteChapter: (chapterId: string) => void;
+  mode: "design" | "preview";
+  onModeChange: (mode: "design" | "preview") => void;
 }) {
+  const activeChapter = chapters.find((chapter) => chapter.id === activeChapterId) ?? chapters[0];
+  const activeFocusKey = activeChapter?.focus as SceneFocus | undefined;
+  const activeFocus = activeFocusKey ? focusTargetConfigs[activeFocusKey] : undefined;
+
+  const updateLookAt = (index: number, next: number) => {
+    if (!activeFocus || !activeFocusKey) return;
+    const nextLookAt: [number, number, number] = [...activeFocus.lookAt] as [number, number, number];
+    nextLookAt[index] = next;
+    onUpdateFocusTarget(activeFocusKey, "lookAt", nextLookAt);
+  };
+
   return (
     <aside className="sticky top-8 max-h-[calc(100vh-4rem)] overflow-auto rounded-3xl border border-white/10 bg-white/5 p-5 shadow-2xl backdrop-blur">
+      <div className="mb-4 flex items-center justify-between">
+        <div className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/5 p-1 text-[11px] uppercase tracking-[0.3em] text-white/60 shadow-lg">
+          <button
+            type="button"
+            onClick={() => onModeChange("design")}
+            className={`rounded-full px-3 py-1.5 transition ${
+              mode === "design" ? "bg-white text-slate-900 shadow" : "hover:bg-white/10"
+            }`}
+          >
+            Design
+          </button>
+          <button
+            type="button"
+            onClick={() => onModeChange("preview")}
+            className={`rounded-full px-3 py-1.5 transition ${
+              mode === "preview" ? "bg-white text-slate-900 shadow" : "hover:bg-white/10"
+            }`}
+          >
+            Preview
+          </button>
+        </div>
+      </div>
       <div className="flex items-center justify-between">
         <div>
           <p className="text-xs uppercase tracking-[0.3em] text-teal-200">Design mode</p>
@@ -571,22 +649,106 @@ function DesignSidebar({
                   chapter={chapter}
                   index={index}
                   moveChapter={moveChapter}
+                  onDelete={onDeleteChapter}
+                  active={chapter.id === activeChapterId}
                 />
               ))}
             </div>
             <div className="px-4 py-3 text-white/80">Closing</div>
           </div>
         </div>
+        <button
+          type="button"
+          onClick={onAddChapter}
+          className="w-full rounded-2xl border border-teal-300/60 bg-teal-400/10 px-4 py-3 text-center text-xs font-semibold uppercase tracking-[0.2em] text-teal-100 hover:border-teal-300"
+        >
+          Add chapter
+        </button>
         <p className="text-xs text-white/50">Drag chapters to reorder sections in the configurator.</p>
       </div>
+
+      {activeChapter && activeFocus && activeFocusKey && (
+        <div className="mt-6 rounded-2xl border border-white/10 bg-slate-900/60 p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs uppercase tracking-[0.3em] text-white/50">Camera</p>
+              <h4 className="text-sm font-semibold text-white">{activeChapter.title}</h4>
+            </div>
+            <span className="text-[11px] uppercase tracking-[0.25em] text-teal-200">{activeFocusKey}</span>
+          </div>
+          <div className="mt-4 space-y-3 text-sm text-white/80">
+            <label className="space-y-1">
+              <span className="block text-xs uppercase tracking-[0.2em] text-white/50">Radius</span>
+              <input
+                type="number"
+                step="0.1"
+                value={activeFocus.radius}
+                onChange={(e) => onUpdateFocusTarget(activeFocusKey, "radius", parseFloat(e.target.value))}
+                className="w-full rounded-lg border border-white/10 bg-slate-900/70 px-3 py-2 text-sm text-white"
+              />
+            </label>
+            <label className="space-y-1">
+              <span className="block text-xs uppercase tracking-[0.2em] text-white/50">Polar (deg)</span>
+              <input
+                type="number"
+                step="1"
+                value={activeFocus.polarDeg}
+                onChange={(e) =>
+                  onUpdateFocusTarget(activeFocusKey, "polarDeg", parseFloat(e.target.value))
+                }
+                className="w-full rounded-lg border border-white/10 bg-slate-900/70 px-3 py-2 text-sm text-white"
+              />
+            </label>
+            <label className="space-y-1">
+              <span className="block text-xs uppercase tracking-[0.2em] text-white/50">Azimuth (deg)</span>
+              <input
+                type="number"
+                step="1"
+                value={activeFocus.azimuthDeg}
+                onChange={(e) =>
+                  onUpdateFocusTarget(activeFocusKey, "azimuthDeg", parseFloat(e.target.value))
+                }
+                className="w-full rounded-lg border border-white/10 bg-slate-900/70 px-3 py-2 text-sm text-white"
+              />
+            </label>
+            <div className="space-y-2">
+              <span className="block text-xs uppercase tracking-[0.2em] text-white/50">Look at</span>
+              <div className="grid grid-cols-3 gap-2">
+                {["X", "Y", "Z"].map((label, index) => (
+                  <input
+                    key={label}
+                    type="number"
+                    step="0.1"
+                    value={activeFocus.lookAt[index]}
+                    onChange={(e) => updateLookAt(index, parseFloat(e.target.value))}
+                    className="w-full rounded-lg border border-white/10 bg-slate-900/70 px-3 py-2 text-sm text-white"
+                    aria-label={`Look at ${label}`}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </aside>
   );
 }
 
 function HomeContent({ config, classNames }: { config: Config; classNames?: Partial<HomeClassNames> }) {
-  const focusTargets = useMemo(() => buildFocusTargets(config), [config]);
+  const [focusTargetConfigs, setFocusTargetConfigs] = useState(config.scene.focusTargets);
+  const sceneModel = config.scene.model;
+  const focusTargets = useMemo(
+    () =>
+      buildFocusTargets({
+        ...config,
+        scene: { ...config.scene, model: sceneModel, focusTargets: focusTargetConfigs },
+      } as Config),
+    [config, focusTargetConfigs, sceneModel]
+  );
   const focusKeys = useMemo(() => Object.keys(focusTargets) as SceneFocus[], [focusTargets]);
   const [chapters, setChapters] = useState(config.chapters);
+  const [hero, setHero] = useState(config.hero);
+  const [closing, setClosing] = useState(config.closing);
   const defaultFocus = useMemo(
     () =>
       ((chapters[0]?.focus as SceneFocus | undefined) ?? focusKeys[0] ?? ("overview" as SceneFocus)),
@@ -619,6 +781,15 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
   const chapterRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const [selections, setSelections] = useState<Record<string, string>>(() => buildDefaultSelections(config));
   const isDesignMode = mode === "design";
+  const [activeChapterId, setActiveChapterId] = useState(orderedChapters[0]?.id ?? "");
+  const [chapterDrafts, setChapterDrafts] = useState<Record<string, Partial<Config["chapters"][number]>>>(
+    {}
+  );
+  const [editingChapters, setEditingChapters] = useState<Record<string, boolean>>({});
+  const [heroDraft, setHeroDraft] = useState(hero);
+  const [closingDraft, setClosingDraft] = useState(closing);
+  const [isEditingHero, setIsEditingHero] = useState(false);
+  const [isEditingClosing, setIsEditingClosing] = useState(false);
 
   const moveChapter = useCallback((fromIndex: number, toIndex: number) => {
     setChapterOrder((prev) => {
@@ -628,6 +799,102 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
       return updated;
     });
   }, []);
+
+  const handleUpdateFocusTarget = useCallback(
+    (
+      focusKey: SceneFocus,
+      field: "radius" | "polarDeg" | "azimuthDeg" | "lookAt",
+      value: number | [number, number, number]
+    ) => {
+      setFocusTargetConfigs((prev) => {
+        const current =
+          prev[focusKey] ?? {
+            radius: 5,
+            polarDeg: 60,
+            azimuthDeg: 30,
+            lookAt: [0, 0, 0],
+          };
+        return {
+          ...prev,
+          [focusKey]: {
+            ...current,
+            [field]: value,
+          },
+        };
+      });
+    },
+    []
+  );
+
+  const addChapter = useCallback(() => {
+    const newId = `chapter-${Math.random().toString(36).slice(2, 7)}`;
+    const focusKey = newId as SceneFocus;
+    const newChapter: Config["chapters"][number] = {
+      id: newId,
+      focus: focusKey,
+      kicker: "New chapter",
+      title: "Give this a title",
+      description: "Describe this chapter",
+      groups: [],
+    };
+    setChapters((prev) => [...prev, newChapter]);
+    setChapterOrder((prev) => [...prev, newId]);
+    setFocusTargetConfigs((prev) => ({
+      ...prev,
+      [focusKey]: {
+        radius: 5,
+        polarDeg: 60,
+        azimuthDeg: 30,
+        lookAt: [0, 0, 0],
+      },
+    }));
+    setActiveChapterId(newId);
+    setEditingChapters((prev) => ({ ...prev, [newId]: true }));
+    setChapterDrafts((prev) => ({
+      ...prev,
+      [newId]: {
+        kicker: newChapter.kicker,
+        title: newChapter.title,
+        description: newChapter.description,
+      },
+    }));
+  }, []);
+
+  const deleteChapter = useCallback(
+    (chapterId: string) => {
+      setChapters((prev) => prev.filter((chapter) => chapter.id !== chapterId));
+      setChapterOrder((prev) => prev.filter((id) => id !== chapterId));
+      setSelections((prev) => {
+        const next = { ...prev };
+        const chapter = chapters.find((ch) => ch.id === chapterId);
+        chapter?.groups.forEach((group) => {
+          delete next[group.id];
+        });
+        return next;
+      });
+      setFocusTargetConfigs((prev) => {
+        const next = { ...prev };
+        delete next[chapterId as SceneFocus];
+        return next;
+      });
+      setActiveChapterId((current) => {
+        if (current !== chapterId) return current;
+        const nextId = chapterOrder.find((id) => id !== chapterId);
+        return nextId ?? "";
+      });
+      setEditingChapters((prev) => {
+        const next = { ...prev };
+        delete next[chapterId];
+        return next;
+      });
+      setChapterDrafts((prev) => {
+        const next = { ...prev };
+        delete next[chapterId];
+        return next;
+      });
+    },
+    [chapterOrder, chapters]
+  );
 
   const updateGroupOptions = useCallback(
     (
@@ -660,6 +927,63 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
       updateGroupOptions(chapterId, groupId, (options) => [...options, newOption]);
     },
     [updateGroupOptions]
+  );
+
+  const startChapterEdit = useCallback((chapterId: string, chapter: Config["chapters"][number]) => {
+    setEditingChapters((prev) => ({ ...prev, [chapterId]: true }));
+    setChapterDrafts((prev) => ({
+      ...prev,
+      [chapterId]: {
+        kicker: chapter.kicker,
+        title: chapter.title,
+        description: chapter.description,
+      },
+    }));
+  }, []);
+
+  const cancelChapterEdit = useCallback((chapterId: string) => {
+    setEditingChapters((prev) => ({ ...prev, [chapterId]: false }));
+    setChapterDrafts((prev) => {
+      const next = { ...prev };
+      delete next[chapterId];
+      return next;
+    });
+  }, []);
+
+  const updateChapterDraft = useCallback(
+    (chapterId: string, field: "kicker" | "title" | "description", value: string) => {
+      setChapterDrafts((prev) => ({
+        ...prev,
+        [chapterId]: { ...prev[chapterId], [field]: value },
+      }));
+    },
+    []
+  );
+
+  const saveChapterEdit = useCallback(
+    (chapterId: string) => {
+      const draft = chapterDrafts[chapterId];
+      if (!draft) return;
+      setChapters((prev) =>
+        prev.map((chapter) =>
+          chapter.id === chapterId
+            ? {
+                ...chapter,
+                kicker: draft.kicker ?? chapter.kicker,
+                title: draft.title ?? chapter.title,
+                description: draft.description ?? chapter.description,
+              }
+            : chapter
+        )
+      );
+      setEditingChapters((prev) => ({ ...prev, [chapterId]: false }));
+      setChapterDrafts((prev) => {
+        const next = { ...prev };
+        delete next[chapterId];
+        return next;
+      });
+    },
+    [chapterDrafts]
   );
 
   const handleDeleteOption = useCallback(
@@ -703,8 +1027,8 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
   );
 
   useEffect(() => {
-    useGLTF.preload(config.scene.model.src);
-  }, [config.scene.model.src]);
+    useGLTF.preload(sceneModel.src);
+  }, [sceneModel.src]);
 
   useEffect(() => {
     if (!orderedChapters.length) return;
@@ -712,6 +1036,7 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
     const handleScroll = () => {
       const markerY = window.innerHeight * 0.35;
       let nextFocus: SceneFocus | null = null;
+      let nextChapterId: string | null = null;
 
       for (const chapter of orderedChapters) {
         const element = chapterRefs.current[chapter.id];
@@ -719,6 +1044,7 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
         const rect = element.getBoundingClientRect();
         if (rect.top <= markerY && rect.bottom >= markerY) {
           nextFocus = chapter.focus as SceneFocus;
+          nextChapterId = chapter.id;
           break;
         }
       }
@@ -726,6 +1052,9 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
       if (nextFocus && nextFocus !== focusRef.current) {
         focusRef.current = nextFocus;
         setFocus(nextFocus);
+      }
+      if (nextChapterId && nextChapterId !== activeChapterId) {
+        setActiveChapterId(nextChapterId);
       }
     };
 
@@ -737,7 +1066,7 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
       window.removeEventListener("scroll", handleScroll);
       window.removeEventListener("resize", handleScroll);
     };
-  }, [orderedChapters]);
+  }, [activeChapterId, orderedChapters]);
 
   const objectVisibility = useMemo(() => {
     const map: Record<string, boolean> = {};
@@ -757,44 +1086,142 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
 
   const content = (
     <div className="space-y-16">
-      <div className="flex justify-end">
-        <div className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/5 p-1 text-xs uppercase tracking-[0.3em] text-white/60 shadow-2xl">
-          <button
-            type="button"
-            onClick={() => setMode("design")}
-            className={`rounded-full px-4 py-2 transition ${
-              isDesignMode ? "bg-white text-slate-900 shadow-lg" : "hover:bg-white/10"
-            }`}
-          >
-            Design
-          </button>
-          <button
-            type="button"
-            onClick={() => setMode("preview")}
-            className={`rounded-full px-4 py-2 transition ${
-              !isDesignMode ? "bg-white text-slate-900 shadow-lg" : "hover:bg-white/10"
-            }`}
-          >
-            Preview
-          </button>
+      {!isDesignMode && (
+        <div className="flex justify-end">
+          <div className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/5 p-1 text-xs uppercase tracking-[0.3em] text-white/60 shadow-2xl">
+            <button
+              type="button"
+              onClick={() => setMode("design")}
+              className={`rounded-full px-4 py-2 transition ${
+                isDesignMode ? "bg-white text-slate-900 shadow-lg" : "hover:bg-white/10"
+              }`}
+            >
+              Design
+            </button>
+            <button
+              type="button"
+              onClick={() => setMode("preview")}
+              className={`rounded-full px-4 py-2 transition ${
+                !isDesignMode ? "bg-white text-slate-900 shadow-lg" : "hover:bg-white/10"
+              }`}
+            >
+              Preview
+            </button>
+          </div>
         </div>
-      </div>
+      )}
 
       <section className={mergedClasses.heroSection}>
-        <p className={mergedClasses.heroKicker}>{config.hero.kicker}</p>
-        <h1 className={mergedClasses.heroTitle}>{config.hero.title}</h1>
-        {config.hero.paragraphs.map((paragraph, index) => (
-          <p key={index} className={mergedClasses.heroParagraph}>
-            {paragraph}
-          </p>
-        ))}
+        {isDesignMode && isEditingHero ? (
+          <div className="space-y-3 rounded-3xl border border-white/10 bg-white/5 p-4">
+            <input
+              className="w-full rounded-lg border border-white/10 bg-slate-900/70 px-3 py-2 text-sm uppercase tracking-[0.4em] text-white"
+              value={heroDraft.kicker}
+              onChange={(e) => setHeroDraft((prev) => ({ ...prev, kicker: e.target.value }))}
+              placeholder="Kicker"
+            />
+            <input
+              className="w-full rounded-lg border border-white/10 bg-slate-900/70 px-3 py-2 text-3xl font-semibold text-white"
+              value={heroDraft.title}
+              onChange={(e) => setHeroDraft((prev) => ({ ...prev, title: e.target.value }))}
+              placeholder="Title"
+            />
+            <div className="space-y-2">
+              {heroDraft.paragraphs.map((paragraph, index) => (
+                <div key={index} className="flex items-start gap-2">
+                  <textarea
+                    className="w-full rounded-lg border border-white/10 bg-slate-900/70 px-3 py-2 text-sm text-white"
+                    value={paragraph}
+                    onChange={(e) =>
+                      setHeroDraft((prev) => {
+                        const next = [...prev.paragraphs];
+                        next[index] = e.target.value;
+                        return { ...prev, paragraphs: next };
+                      })
+                    }
+                    rows={2}
+                  />
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setHeroDraft((prev) => ({
+                        ...prev,
+                        paragraphs: prev.paragraphs.filter((_, i) => i !== index),
+                      }))
+                    }
+                    className="rounded-full border border-white/20 px-3 py-1 text-xs text-white hover:border-red-300 hover:text-red-200"
+                  >
+                    Delete
+                  </button>
+                </div>
+              ))}
+              <button
+                type="button"
+                onClick={() =>
+                  setHeroDraft((prev) => ({ ...prev, paragraphs: [...prev.paragraphs, ""] }))
+                }
+                className="rounded-full border border-teal-300/60 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-teal-200 hover:border-teal-300"
+              >
+                Add paragraph
+              </button>
+            </div>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setHero(heroDraft);
+                  setIsEditingHero(false);
+                }}
+                className="rounded-full bg-teal-400 px-4 py-2 text-xs font-semibold text-slate-900"
+              >
+                Save
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setHeroDraft(hero);
+                  setIsEditingHero(false);
+                }}
+                className="rounded-full border border-white/20 px-4 py-2 text-xs text-white hover:border-white/40"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        ) : (
+          <>
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex-1 space-y-2">
+                <p className={mergedClasses.heroKicker}>{hero.kicker}</p>
+                <h1 className={mergedClasses.heroTitle}>{hero.title}</h1>
+              </div>
+              {isDesignMode && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setHeroDraft(hero);
+                    setIsEditingHero(true);
+                  }}
+                  className="rounded-full border border-white/20 px-3 py-1 text-xs text-white hover:border-white/40"
+                >
+                  Edit
+                </button>
+              )}
+            </div>
+            {hero.paragraphs.map((paragraph, index) => (
+              <p key={index} className={mergedClasses.heroParagraph}>
+                {paragraph}
+              </p>
+            ))}
+          </>
+        )}
       </section>
 
       <section className={mergedClasses.chaptersSection} aria-label="Configurator chapters">
         <div className={mergedClasses.canvasWrapper}>
           <ConfiguratorCanvas
             focus={focus}
-            modelConfig={config.scene.model}
+            modelConfig={sceneModel}
             visibility={objectVisibility}
             focusTargets={focusTargets}
           />
@@ -808,10 +1235,72 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
             className={mergedClasses.chapterContainer}
             aria-label={`${chapter.title} configuration focus`}
           >
-            <header className={mergedClasses.chapterHeader}>
-              <p className={mergedClasses.chapterKicker}>{chapter.kicker}</p>
-              <h2 className={mergedClasses.chapterTitle}>{chapter.title}</h2>
-              <p className={mergedClasses.chapterDescription}>{chapter.description}</p>
+            <header className={`${mergedClasses.chapterHeader} flex flex-col gap-3`}>
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex-1 space-y-2">
+                  {isDesignMode && editingChapters[chapter.id] ? (
+                    <>
+                      <input
+                        className="w-full rounded-lg border border-white/10 bg-slate-900/70 px-3 py-2 text-sm text-white"
+                        value={(chapterDrafts[chapter.id]?.kicker as string | undefined) ?? chapter.kicker}
+                        onChange={(e) => updateChapterDraft(chapter.id, "kicker", e.target.value)}
+                        placeholder="Kicker"
+                      />
+                      <input
+                        className="w-full rounded-lg border border-white/10 bg-slate-900/70 px-3 py-2 text-lg font-semibold text-white"
+                        value={(chapterDrafts[chapter.id]?.title as string | undefined) ?? chapter.title}
+                        onChange={(e) => updateChapterDraft(chapter.id, "title", e.target.value)}
+                        placeholder="Title"
+                      />
+                      <textarea
+                        className="w-full rounded-lg border border-white/10 bg-slate-900/70 px-3 py-2 text-sm text-white"
+                        value={
+                          (chapterDrafts[chapter.id]?.description as string | undefined) ?? chapter.description
+                        }
+                        onChange={(e) => updateChapterDraft(chapter.id, "description", e.target.value)}
+                        placeholder="Description"
+                        rows={3}
+                      />
+                    </>
+                  ) : (
+                    <>
+                      <p className={mergedClasses.chapterKicker}>{chapter.kicker}</p>
+                      <h2 className={mergedClasses.chapterTitle}>{chapter.title}</h2>
+                      <p className={mergedClasses.chapterDescription}>{chapter.description}</p>
+                    </>
+                  )}
+                </div>
+                {isDesignMode && (
+                  <div className="flex flex-col gap-2">
+                    {editingChapters[chapter.id] ? (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => saveChapterEdit(chapter.id)}
+                          className="rounded-full bg-teal-400 px-3 py-1 text-xs font-semibold text-slate-900"
+                        >
+                          Save
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => cancelChapterEdit(chapter.id)}
+                          className="rounded-full border border-white/20 px-3 py-1 text-xs text-white hover:border-white/40"
+                        >
+                          Cancel
+                        </button>
+                      </>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => startChapterEdit(chapter.id, chapter)}
+                        className="rounded-full border border-white/20 px-3 py-1 text-xs text-white hover:border-white/40"
+                      >
+                        Edit
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
             </header>
             <div className={mergedClasses.groupWrapper}>
               {chapter.groups.map((group) =>
@@ -854,15 +1343,111 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
         ))}
       </section>
 
-      <section className={mergedClasses.closingSection}>
-        <p className={mergedClasses.closingKicker}>{config.closing.kicker}</p>
-        <h2 className={mergedClasses.closingTitle}>{config.closing.title}</h2>
-        {config.closing.paragraphs.map((paragraph, index) => (
-          <p key={index} className={mergedClasses.closingParagraph}>
-            {paragraph}
-          </p>
-        ))}
-      </section>
+            <section className={mergedClasses.closingSection}>
+              {isDesignMode && isEditingClosing ? (
+                <div className="space-y-3 rounded-3xl border border-white/10 bg-white/5 p-4">
+                  <input
+                    className="w-full rounded-lg border border-white/10 bg-slate-900/70 px-3 py-2 text-sm uppercase tracking-[0.4em] text-white"
+                    value={closingDraft.kicker}
+                    onChange={(e) => setClosingDraft((prev) => ({ ...prev, kicker: e.target.value }))}
+                    placeholder="Kicker"
+                  />
+                  <input
+                    className="w-full rounded-lg border border-white/10 bg-slate-900/70 px-3 py-2 text-2xl font-semibold text-white"
+                    value={closingDraft.title}
+                    onChange={(e) => setClosingDraft((prev) => ({ ...prev, title: e.target.value }))}
+                    placeholder="Title"
+                  />
+                  <div className="space-y-2">
+                    {closingDraft.paragraphs.map((paragraph, index) => (
+                      <div key={index} className="flex items-start gap-2">
+                        <textarea
+                          className="w-full rounded-lg border border-white/10 bg-slate-900/70 px-3 py-2 text-sm text-white"
+                          value={paragraph}
+                          onChange={(e) =>
+                            setClosingDraft((prev) => {
+                              const next = [...prev.paragraphs];
+                              next[index] = e.target.value;
+                              return { ...prev, paragraphs: next };
+                            })
+                          }
+                          rows={2}
+                        />
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setClosingDraft((prev) => ({
+                              ...prev,
+                              paragraphs: prev.paragraphs.filter((_, i) => i !== index),
+                            }))
+                          }
+                          className="rounded-full border border-white/20 px-3 py-1 text-xs text-white hover:border-red-300 hover:text-red-200"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    ))}
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setClosingDraft((prev) => ({ ...prev, paragraphs: [...prev.paragraphs, ""] }))
+                      }
+                      className="rounded-full border border-teal-300/60 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-teal-200 hover:border-teal-300"
+                    >
+                      Add paragraph
+                    </button>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setClosing(closingDraft);
+                        setIsEditingClosing(false);
+                      }}
+                      className="rounded-full bg-teal-400 px-4 py-2 text-xs font-semibold text-slate-900"
+                    >
+                      Save
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setClosingDraft(closing);
+                        setIsEditingClosing(false);
+                      }}
+                      className="rounded-full border border-white/20 px-4 py-2 text-xs text-white hover:border-white/40"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex-1 space-y-2">
+                      <p className={mergedClasses.closingKicker}>{closing.kicker}</p>
+                      <h2 className={mergedClasses.closingTitle}>{closing.title}</h2>
+                    </div>
+                    {isDesignMode && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setClosingDraft(closing);
+                          setIsEditingClosing(true);
+                        }}
+                        className="rounded-full border border-white/20 px-3 py-1 text-xs text-white hover:border-white/40"
+                      >
+                        Edit
+                      </button>
+                    )}
+                  </div>
+                  {closing.paragraphs.map((paragraph, index) => (
+                    <p key={index} className={mergedClasses.closingParagraph}>
+                      {paragraph}
+                    </p>
+                  ))}
+                </>
+              )}
+            </section>
     </div>
   );
 
@@ -872,7 +1457,17 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
         {isDesignMode ? (
           <div className="flex w-full gap-10 px-6 py-16">
             <div className="w-[320px] shrink-0">
-              <DesignSidebar chapters={orderedChapters} moveChapter={moveChapter} />
+              <DesignSidebar
+                chapters={orderedChapters}
+                moveChapter={moveChapter}
+                activeChapterId={activeChapterId}
+                focusTargetConfigs={focusTargetConfigs}
+                onUpdateFocusTarget={handleUpdateFocusTarget}
+                onAddChapter={addChapter}
+                onDeleteChapter={deleteChapter}
+                mode={mode}
+                onModeChange={setMode}
+              />
             </div>
             <main className="flex-1 space-y-16">{content}</main>
           </div>
