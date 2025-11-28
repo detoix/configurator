@@ -247,12 +247,13 @@ function CameraRig({ focus, focusTargets }: { focus: SceneFocus; focusTargets: F
 function SingleModel({
   modelConfig,
   visibility,
+  gltfScene,
 }: {
   modelConfig: SceneModelConfig;
   visibility: Record<string, boolean | undefined>;
+  gltfScene: Object3D;
 }) {
-  const { scene } = useGLTF(modelConfig.src);
-  const instance = useMemo(() => scene.clone(), [scene]);
+  const instance = useMemo(() => gltfScene.clone(), [gltfScene]);
 
   const rotation = useMemo(() => {
     const [x = 0, y = 0, z = 0] = modelConfig.rotationDeg ?? [0, 0, 0];
@@ -512,12 +513,15 @@ function ConfiguratorCanvas({
   modelConfig,
   visibility,
   focusTargets,
+  gltfScene,
 }: {
   focus: SceneFocus;
   modelConfig: SceneModelConfig;
   visibility: Record<string, boolean | undefined>;
   focusTargets: FocusTargetsMap;
+  gltfScene: Object3D | null;
 }) {
+  if (!gltfScene) return null;
   return (
     <Canvas shadows camera={{ position: [4, 3, 6], fov: 50 }}>
       <color attach="background" args={["#020617"]} />
@@ -530,7 +534,7 @@ function ConfiguratorCanvas({
       />
       <Suspense fallback={null}>
         <CameraRig focus={focus} focusTargets={focusTargets} />
-        <SingleModel modelConfig={modelConfig} visibility={visibility} />
+        <SingleModel modelConfig={modelConfig} visibility={visibility} gltfScene={gltfScene} />
         <mesh rotation-x={-Math.PI / 2} position={[0, -1.2, 0]} receiveShadow>
           <planeGeometry args={[50, 50]} />
           <shadowMaterial opacity={0.25} />
@@ -550,6 +554,20 @@ type MeshTreeNode = {
   children: MeshTreeNode[];
   isMesh: boolean;
 };
+
+function GltfSceneLoader({ url, onLoaded }: { url: string; onLoaded: (scene: Object3D) => void }) {
+  const gltf = useGLTF(url);
+
+  useEffect(() => {
+    if (gltf?.scene) onLoaded(gltf.scene);
+  }, [gltf, onLoaded]);
+
+  useEffect(() => {
+    useGLTF.preload(url);
+  }, [url]);
+
+  return null;
+}
 
 function MeshTreeNodeView({
   node,
@@ -909,6 +927,8 @@ function DesignSidebar({
 function HomeContent({ config, classNames }: { config: Config; classNames?: Partial<HomeClassNames> }) {
   const [focusTargetConfigs, setFocusTargetConfigs] = useState(config.scene.focusTargets);
   const sceneModel = config.scene.model;
+  const [gltfScene, setGltfScene] = useState<Object3D | null>(null);
+  const isClient = typeof window !== "undefined";
   const focusTargets = useMemo(
     () =>
       buildFocusTargets({
@@ -968,13 +988,12 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
     optionValue: string;
   } | null>(null);
   const sidebarModelUrl = useMemo(() => resolveModelUrl(sceneModel.src), [sceneModel.src]);
-  const gltfForSidebar = useGLTF(sidebarModelUrl);
   const meshTree = useMemo(() => {
-    const scene = gltfForSidebar?.scene;
+    const scene = gltfScene;
     if (!scene) return [] as MeshTreeNode[];
     const counter = { current: 1 };
     return scene.children.map((child) => buildMeshTree(child, counter)).filter(Boolean) as MeshTreeNode[];
-  }, [gltfForSidebar?.scene]);
+  }, [gltfScene]);
 
   const moveChapter = useCallback((fromIndex: number, toIndex: number) => {
     setChapterOrder((prev) => {
@@ -1275,10 +1294,6 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
   );
 
   useEffect(() => {
-    useGLTF.preload(sidebarModelUrl);
-  }, [sidebarModelUrl]);
-
-  useEffect(() => {
     if (!orderedChapters.length) return;
 
     const handleScroll = () => {
@@ -1472,6 +1487,7 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
             modelConfig={sceneModel}
             visibility={objectVisibility}
             focusTargets={focusTargets}
+            gltfScene={gltfScene}
           />
         </div>
         {orderedChapters.map((chapter) => (
@@ -1705,6 +1721,9 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
   return (
     <DndProvider backend={HTML5Backend}>
       <div className={mergedClasses.root}>
+        {isClient && gltfScene === null && (
+          <GltfSceneLoader url={sidebarModelUrl} onLoaded={(scene) => setGltfScene(scene)} />
+        )}
         {isDesignMode ? (
           <div className="flex w-full gap-10 px-6 py-16">
             <div className="w-[320px] shrink-0 pb-28">
