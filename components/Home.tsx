@@ -520,6 +520,7 @@ function EditableConfigGroup({
   onDelete,
   onEdit,
   onOpenModel,
+  onDeleteGroup,
 }: {
   group: ConfiguratorGroup;
   value: string;
@@ -528,6 +529,7 @@ function EditableConfigGroup({
   onDelete: (optionValue: string) => void;
   onEdit: (originalValue: string, next: OptionDraft) => void;
   onOpenModel: (optionValue: string) => void;
+  onDeleteGroup: () => void;
 }) {
   const name = useId();
 
@@ -546,6 +548,13 @@ function EditableConfigGroup({
           className="rounded-full border border-teal-300/60 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-teal-200 hover:border-teal-300"
         >
           Add
+        </button>
+        <button
+          type="button"
+          onClick={onDeleteGroup}
+          className="rounded-full border border-red-300/60 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-red-100 hover:border-red-300"
+        >
+          Delete group
         </button>
       </div>
       <div className="mt-5 grid gap-3 md:grid-cols-2">
@@ -958,6 +967,10 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
     target: [number, number, number];
   } | null>(null);
   const [resetCameraToken, setResetCameraToken] = useState(0);
+  const generateGroupId = useCallback(
+    () => `group-${Math.random().toString(36).slice(2, 7)}`,
+    []
+  );
   const isClient = typeof window !== "undefined";
   const focusTargets = useMemo(
     () =>
@@ -1130,6 +1143,50 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
     },
     []
   );
+
+  const handleAddGroup = useCallback(
+    (chapterId: string) => {
+      const newGroupId = generateGroupId();
+      const newOption: RadioOption = {
+        label: "New option",
+        description: "Describe this option",
+        value: `option-${Math.random().toString(36).slice(2, 7)}`,
+        price: 0,
+      };
+      const newGroup: ConfiguratorGroup = {
+        id: newGroupId,
+        title: "New group",
+        helper: "Describe this group",
+        options: [newOption],
+      };
+      setChapters((prev) =>
+        prev.map((chapter) =>
+          chapter.id === chapterId ? { ...chapter, groups: [...chapter.groups, newGroup] } : chapter
+        )
+      );
+      setSelections((prev) => ({ ...prev, [newGroupId]: newOption.value }));
+    },
+    [generateGroupId]
+  );
+
+  const handleDeleteGroup = useCallback((chapterId: string, groupId: string) => {
+    setChapters((prev) =>
+      prev.map((chapter) =>
+        chapter.id === chapterId
+          ? { ...chapter, groups: chapter.groups.filter((group) => group.id !== groupId) }
+          : chapter
+      )
+    );
+    setSelections((prev) => {
+      const next = { ...prev };
+      delete next[groupId];
+      return next;
+    });
+    setOptionModelTarget((prev) => {
+      if (prev && prev.groupId === groupId && prev.chapterId === chapterId) return null;
+      return prev;
+    });
+  }, []);
 
   const handleAddOption = useCallback(
     (chapterId: string, groupId: string) => {
@@ -1777,11 +1834,11 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
             <div className={mergedClasses.groupWrapper}>
               {chapter.groups.map((group) =>
                 isDesignMode ? (
-                  <EditableConfigGroup
-                    key={group.id}
-                    group={group}
-                    value={selections[group.id]}
-                    onChange={(next) =>
+                <EditableConfigGroup
+                  key={group.id}
+                  group={group}
+                  value={selections[group.id]}
+                  onChange={(next) =>
                       setSelections((prev) => ({
                         ...prev,
                         [group.id]: next,
@@ -1792,10 +1849,11 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
                     onEdit={(originalValue, next) =>
                       handleEditOption(chapter.id, group.id, originalValue, next)
                     }
-                    onOpenModel={(optionValue) =>
-                      openOptionModelEditor(chapter.id, group.id, optionValue)
-                    }
-                  />
+                  onOpenModel={(optionValue) =>
+                    openOptionModelEditor(chapter.id, group.id, optionValue)
+                  }
+                  onDeleteGroup={() => handleDeleteGroup(chapter.id, group.id)}
+                />
                 ) : (
                   <ConfigRadioGroup
                     key={group.id}
@@ -1812,6 +1870,17 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
                     }
                   />
                 )
+              )}
+              {isDesignMode && (
+                <div className="mt-4 flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => handleAddGroup(chapter.id)}
+                    className="rounded-full border border-teal-300/60 bg-teal-400/10 px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-teal-100 hover:border-teal-300"
+                  >
+                    Add group
+                  </button>
+                </div>
               )}
             </div>
           </div>
