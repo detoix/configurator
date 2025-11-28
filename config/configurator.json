@@ -10,13 +10,13 @@
   "scene": {
     "focusTargets": {
       "overview": {
-        "radius": 7,
+        "radius": 10,
         "polarDeg": 60,
         "azimuthDeg": 35,
         "lookAt": [0, 0.6, 0]
       },
       "detail": {
-        "radius": 7,
+        "radius": 10,
         "polarDeg": 52,
         "azimuthDeg": -60,
         "lookAt": [0, 0.8, 0]
@@ -24,7 +24,7 @@
     },
     "model": {
       "src": "/sci_fi_turret.glb",
-      "position": [0, -1.2, 0],
+      "position": [0, 0, 0],
       "rotationDeg": [0, 0, 0],
       "scale": [0.02, 0.02, 0.02]
     }

@@ -718,8 +718,6 @@ function DesignSidebar({
   chapters,
   moveChapter,
   activeChapterId,
-  focusTargetConfigs,
-  onUpdateFocusTarget,
   onAddChapter,
   onDeleteChapter,
   mode,
@@ -733,12 +731,6 @@ function DesignSidebar({
   chapters: Config["chapters"];
   moveChapter: (from: number, to: number) => void;
   activeChapterId: string | null;
-  focusTargetConfigs: Config["scene"]["focusTargets"];
-  onUpdateFocusTarget: (
-    focusKey: SceneFocus,
-    field: "radius" | "polarDeg" | "azimuthDeg" | "lookAt",
-    value: number | [number, number, number]
-  ) => void;
   onAddChapter: () => void;
   onDeleteChapter: (chapterId: string) => void;
   mode: "design" | "preview";
@@ -749,17 +741,6 @@ function DesignSidebar({
   onToggleMesh: (meshName: string) => void;
   optionVisibility: Record<string, boolean | undefined>;
 }) {
-  const activeChapter = chapters.find((chapter) => chapter.id === activeChapterId) ?? chapters[0];
-  const activeFocusKey = activeChapter?.focus as SceneFocus | undefined;
-  const activeFocus = activeFocusKey ? focusTargetConfigs[activeFocusKey] : undefined;
-
-  const updateLookAt = (index: number, next: number) => {
-    if (!activeFocus || !activeFocusKey) return;
-    const nextLookAt: [number, number, number] = [...activeFocus.lookAt] as [number, number, number];
-    nextLookAt[index] = next;
-    onUpdateFocusTarget(activeFocusKey, "lookAt", nextLookAt);
-  };
-
   return (
     <aside className="sticky top-8 max-h-[calc(100vh-4rem)] overflow-auto rounded-3xl border border-white/10 bg-white/5 p-5 shadow-2xl backdrop-blur">
       <div className="mb-4 flex items-center justify-between">
@@ -826,70 +807,6 @@ function DesignSidebar({
         <p className="text-xs text-white/50">Drag chapters to reorder sections in the configurator.</p>
       </div>
 
-      {activeChapter && activeFocus && activeFocusKey && (
-        <div className="mt-6 rounded-2xl border border-white/10 bg-slate-900/60 p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs uppercase tracking-[0.3em] text-white/50">Camera</p>
-              <h4 className="text-sm font-semibold text-white">{activeChapter.title}</h4>
-            </div>
-            <span className="text-[11px] uppercase tracking-[0.25em] text-teal-200">{activeFocusKey}</span>
-          </div>
-          <div className="mt-4 space-y-3 text-sm text-white/80">
-            <label className="space-y-1">
-              <span className="block text-xs uppercase tracking-[0.2em] text-white/50">Radius</span>
-              <input
-                type="number"
-                step="0.1"
-                value={activeFocus.radius}
-                onChange={(e) => onUpdateFocusTarget(activeFocusKey, "radius", parseFloat(e.target.value))}
-                className="w-full rounded-lg border border-white/10 bg-slate-900/70 px-3 py-2 text-sm text-white"
-              />
-            </label>
-            <label className="space-y-1">
-              <span className="block text-xs uppercase tracking-[0.2em] text-white/50">Polar (deg)</span>
-              <input
-                type="number"
-                step="1"
-                value={activeFocus.polarDeg}
-                onChange={(e) =>
-                  onUpdateFocusTarget(activeFocusKey, "polarDeg", parseFloat(e.target.value))
-                }
-                className="w-full rounded-lg border border-white/10 bg-slate-900/70 px-3 py-2 text-sm text-white"
-              />
-            </label>
-            <label className="space-y-1">
-              <span className="block text-xs uppercase tracking-[0.2em] text-white/50">Azimuth (deg)</span>
-              <input
-                type="number"
-                step="1"
-                value={activeFocus.azimuthDeg}
-                onChange={(e) =>
-                  onUpdateFocusTarget(activeFocusKey, "azimuthDeg", parseFloat(e.target.value))
-                }
-                className="w-full rounded-lg border border-white/10 bg-slate-900/70 px-3 py-2 text-sm text-white"
-              />
-            </label>
-            <div className="space-y-2">
-              <span className="block text-xs uppercase tracking-[0.2em] text-white/50">Look at</span>
-              <div className="grid grid-cols-3 gap-2">
-                {["X", "Y", "Z"].map((label, index) => (
-                  <input
-                    key={label}
-                    type="number"
-                    step="0.1"
-                    value={activeFocus.lookAt[index]}
-                    onChange={(e) => updateLookAt(index, parseFloat(e.target.value))}
-                    className="w-full rounded-lg border border-white/10 bg-slate-900/70 px-3 py-2 text-sm text-white"
-                    aria-label={`Look at ${label}`}
-                  />
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
       {optionModelTarget && (
         <div className="mt-6 rounded-2xl border border-white/10 bg-slate-900/60 p-4">
           <div className="flex items-center justify-between">
@@ -926,8 +843,9 @@ function DesignSidebar({
 
 function HomeContent({ config, classNames }: { config: Config; classNames?: Partial<HomeClassNames> }) {
   const [focusTargetConfigs, setFocusTargetConfigs] = useState(config.scene.focusTargets);
-  const sceneModel = config.scene.model;
+  const [sceneModel, setSceneModel] = useState(config.scene.model);
   const [gltfScene, setGltfScene] = useState<Object3D | null>(null);
+  const [localModelUrl, setLocalModelUrl] = useState<string | null>(null);
   const isClient = typeof window !== "undefined";
   const focusTargets = useMemo(
     () =>
@@ -971,9 +889,16 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
   const [focus, setFocus] = useState<SceneFocus>(defaultFocus);
   const focusRef = useRef<SceneFocus>(defaultFocus);
   const chapterRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [selections, setSelections] = useState<Record<string, string>>(() => buildDefaultSelections(config));
   const isDesignMode = mode === "design";
   const [activeChapterId, setActiveChapterId] = useState(orderedChapters[0]?.id ?? "");
+  const activeChapter = useMemo(
+    () => orderedChapters.find((chapter) => chapter.id === activeChapterId) ?? orderedChapters[0],
+    [activeChapterId, orderedChapters]
+  );
+  const activeFocusKey = activeChapter?.focus as SceneFocus | undefined;
+  const activeFocus = activeFocusKey ? focusTargetConfigs[activeFocusKey] : undefined;
   const [chapterDrafts, setChapterDrafts] = useState<Record<string, Partial<Config["chapters"][number]>>>(
     {}
   );
@@ -1028,6 +953,16 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
       });
     },
     []
+  );
+
+  const updateLookAt = useCallback(
+    (index: number, value: number) => {
+      if (!activeFocus || !activeFocusKey) return;
+      const nextLookAt: [number, number, number] = [...activeFocus.lookAt] as [number, number, number];
+      nextLookAt[index] = value;
+      handleUpdateFocusTarget(activeFocusKey, "lookAt", nextLookAt);
+    },
+    [activeFocus, activeFocusKey, handleUpdateFocusTarget]
   );
 
   const addChapter = useCallback(() => {
@@ -1293,6 +1228,49 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
     [totalPrice]
   );
 
+  const handleReplaceModel = useCallback(() => {
+    if (!isClient) return;
+    const nextSrc = window.prompt("Enter the URL or path for the new model (.glb/.gltf):", sceneModel.src);
+    if (!nextSrc) return;
+    const trimmed = nextSrc.trim();
+    if (!trimmed) return;
+    if (localModelUrl) {
+      URL.revokeObjectURL(localModelUrl);
+      setLocalModelUrl(null);
+    }
+    setGltfScene(null);
+    setSceneModel((prev) => ({ ...prev, src: trimmed }));
+  }, [isClient, localModelUrl, sceneModel.src]);
+
+  const handleUploadModelClick = useCallback(() => {
+    if (!isClient) return;
+    fileInputRef.current?.click();
+  }, [isClient]);
+
+  const handleFileInput = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      const file = event.target.files?.[0];
+      if (!file) return;
+      const objectUrl = URL.createObjectURL(file);
+      setGltfScene(null);
+      setSceneModel((prev) => ({ ...prev, src: objectUrl }));
+      setLocalModelUrl((prev) => {
+        if (prev) URL.revokeObjectURL(prev);
+        return objectUrl;
+      });
+      // Reset the input so the same file can be selected again if needed.
+      event.target.value = "";
+    },
+    []
+  );
+
+  useEffect(
+    () => () => {
+      if (localModelUrl) URL.revokeObjectURL(localModelUrl);
+    },
+    [localModelUrl]
+  );
+
   useEffect(() => {
     if (!orderedChapters.length) return;
 
@@ -1481,7 +1459,101 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
       </section>
 
       <section className={mergedClasses.chaptersSection} aria-label="Configurator chapters">
-        <div className={mergedClasses.canvasWrapper}>
+        <div className={`${mergedClasses.canvasWrapper} relative`}>
+          {isDesignMode && activeChapter && activeFocus && activeFocusKey && (
+            <div className="absolute left-3 top-3 z-30 w-[300px] space-y-3 rounded-2xl border border-white/15 bg-slate-900/80 p-3 text-white shadow-2xl backdrop-blur">
+              <div className="flex items-center justify-between text-xs uppercase tracking-[0.25em] text-white/60">
+                <span>Camera</span>
+                <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] text-teal-100">
+                  {activeFocusKey}
+                </span>
+              </div>
+              <div className="space-y-2 text-sm text-white/80">
+                <label className="space-y-1">
+                  <span className="block text-[11px] uppercase tracking-[0.2em] text-white/50">Radius</span>
+                  <input
+                    type="number"
+                    step="0.1"
+                    value={activeFocus.radius}
+                    onChange={(e) =>
+                      handleUpdateFocusTarget(activeFocusKey, "radius", parseFloat(e.target.value))
+                    }
+                    className="w-full rounded-lg border border-white/10 bg-slate-900/70 px-3 py-2 text-sm text-white"
+                  />
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  <label className="space-y-1">
+                    <span className="block text-[11px] uppercase tracking-[0.2em] text-white/50">Polar°</span>
+                    <input
+                      type="number"
+                      step="1"
+                      value={activeFocus.polarDeg}
+                      onChange={(e) =>
+                        handleUpdateFocusTarget(activeFocusKey, "polarDeg", parseFloat(e.target.value))
+                      }
+                      className="w-full rounded-lg border border-white/10 bg-slate-900/70 px-3 py-2 text-sm text-white"
+                    />
+                  </label>
+                  <label className="space-y-1">
+                    <span className="block text-[11px] uppercase tracking-[0.2em] text-white/50">Azimuth°</span>
+                    <input
+                      type="number"
+                      step="1"
+                      value={activeFocus.azimuthDeg}
+                      onChange={(e) =>
+                        handleUpdateFocusTarget(activeFocusKey, "azimuthDeg", parseFloat(e.target.value))
+                      }
+                      className="w-full rounded-lg border border-white/10 bg-slate-900/70 px-3 py-2 text-sm text-white"
+                    />
+                  </label>
+                </div>
+                <div className="space-y-1">
+                  <span className="block text-[11px] uppercase tracking-[0.2em] text-white/50">Look at</span>
+                  <div className="grid grid-cols-3 gap-2">
+                    {["X", "Y", "Z"].map((label, index) => (
+                      <input
+                        key={label}
+                        type="number"
+                        step="0.1"
+                        value={activeFocus.lookAt[index]}
+                        onChange={(e) => updateLookAt(index, parseFloat(e.target.value))}
+                        className="w-full rounded-lg border border-white/10 bg-slate-900/70 px-3 py-2 text-sm text-white"
+                        aria-label={`Look at ${label}`}
+                      />
+                    ))}
+                  </div>
+                </div>
+              </div>
+              <p className="text-[11px] text-white/50">
+                Adjust camera focus for <span className="font-semibold text-white">{activeChapter.title}</span>.
+              </p>
+            </div>
+          )}
+          {isDesignMode && (
+            <div className="absolute right-3 top-3 z-30 flex gap-2">
+              <button
+                type="button"
+                onClick={handleUploadModelClick}
+                className="rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-white shadow hover:border-teal-300 hover:text-teal-100"
+              >
+                Upload model
+              </button>
+              <button
+                type="button"
+                onClick={handleReplaceModel}
+                className="rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-white shadow hover:border-teal-300 hover:text-teal-100"
+              >
+                Use URL
+              </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".glb,.gltf,model/gltf-binary,model/gltf+json"
+                className="hidden"
+                onChange={handleFileInput}
+              />
+            </div>
+          )}
           <ConfiguratorCanvas
             focus={focus}
             modelConfig={sceneModel}
@@ -1731,8 +1803,6 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
                 chapters={orderedChapters}
                 moveChapter={moveChapter}
                 activeChapterId={activeChapterId}
-                focusTargetConfigs={focusTargetConfigs}
-                onUpdateFocusTarget={handleUpdateFocusTarget}
                 onAddChapter={addChapter}
                 onDeleteChapter={deleteChapter}
                 mode={mode}
