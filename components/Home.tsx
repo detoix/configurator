@@ -1,9 +1,11 @@
 'use client';
 
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { Suspense, useEffect, useId, useMemo, useRef, useState } from "react";
+import { Suspense, useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { MathUtils, Spherical, Vector3, Object3D, Mesh } from "three";
 import { useGLTF } from "@react-three/drei";
+import { DndProvider, useDrag, useDrop } from "react-dnd";
+import { HTML5Backend } from "react-dnd-html5-backend";
 
 import configurator from "@/config/configurator.json";
 
@@ -115,6 +117,10 @@ const defaultClasses: HomeClassNames = {
   closingParagraph: "",
 };
 
+const ItemTypes = {
+  CHAPTER: "chapter",
+};
+
 type SceneFocus = keyof Config["scene"]["focusTargets"];
 type FocusTarget = { radius: number; polar: number; azimuth: number; lookAt: Vector3 };
 type FocusTargetsMap = Record<SceneFocus, FocusTarget>;
@@ -129,10 +135,6 @@ function buildFocusTargets(config: Config): FocusTargetsMap {
     };
     return acc;
   }, {} as FocusTargetsMap);
-}
-
-function getDefaultFocus(config: Config, focusKeys: SceneFocus[]): SceneFocus {
-  return (config.chapters[0]?.focus as SceneFocus | undefined) ?? focusKeys[0] ?? ("overview" as SceneFocus);
 }
 
 function buildDefaultSelections(config: Config) {
@@ -295,6 +297,147 @@ function ConfigRadioGroup({ title, helper, options, value, onChange }: ConfigRad
   );
 }
 
+type OptionDraft = Pick<RadioOption, "label" | "description">;
+
+function EditableOptionRow({
+  option,
+  name,
+  checked,
+  onSelect,
+  onDelete,
+  onEdit,
+}: {
+  option: RadioOption;
+  name: string;
+  checked: boolean;
+  onSelect: () => void;
+  onDelete: () => void;
+  onEdit: (next: OptionDraft) => void;
+}) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [draft, setDraft] = useState<OptionDraft>(() => ({
+    label: option.label,
+    description: option.description,
+  }));
+
+  const handleSave = () => {
+    onEdit(draft);
+    setIsEditing(false);
+  };
+
+  return (
+    <div className="flex items-start gap-3 rounded-2xl border border-white/10 bg-white/5 p-3">
+      <input
+        type="radio"
+        name={name}
+        checked={checked}
+        onChange={onSelect}
+        className="mt-1 h-4 w-4 accent-teal-300"
+      />
+      <div className="flex-1 space-y-2">
+        {isEditing ? (
+          <div className="space-y-2">
+            <input
+              className="w-full rounded-lg border border-white/10 bg-slate-900/70 px-3 py-2 text-sm text-white"
+              value={draft.label}
+              onChange={(e) => setDraft((prev) => ({ ...prev, label: e.target.value }))}
+              placeholder="Label"
+            />
+            <input
+              className="w-full rounded-lg border border-white/10 bg-slate-900/70 px-3 py-2 text-sm text-white"
+              value={draft.description}
+              onChange={(e) => setDraft((prev) => ({ ...prev, description: e.target.value }))}
+              placeholder="Description"
+            />
+          </div>
+        ) : (
+          <div>
+            <p className="text-sm font-semibold uppercase tracking-wide text-white">{option.label}</p>
+            <p className="text-xs text-white/70">{option.description}</p>
+          </div>
+        )}
+      </div>
+      <div className="flex flex-col gap-2">
+        {isEditing ? (
+          <button
+            type="button"
+            onClick={handleSave}
+            className="rounded-full bg-teal-400 px-3 py-1 text-xs font-semibold text-slate-900"
+          >
+            Save
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setIsEditing(true)}
+            className="rounded-full border border-white/20 px-3 py-1 text-xs text-white hover:border-white/40"
+          >
+            Edit
+          </button>
+        )}
+        <button
+          type="button"
+          onClick={isEditing ? () => setIsEditing(false) : onDelete}
+          className="rounded-full border border-white/20 px-3 py-1 text-xs text-white hover:border-white/40"
+        >
+          {isEditing ? "Cancel" : "Delete"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function EditableConfigGroup({
+  group,
+  value,
+  onChange,
+  onAdd,
+  onDelete,
+  onEdit,
+}: {
+  group: ConfiguratorGroup;
+  value: string;
+  onChange: (value: string) => void;
+  onAdd: () => void;
+  onDelete: (optionValue: string) => void;
+  onEdit: (originalValue: string, next: OptionDraft) => void;
+}) {
+  const name = useId();
+
+  return (
+    <fieldset className="rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur">
+      <div className="flex items-center justify-between">
+        <div>
+          <legend className="text-base font-semibold uppercase tracking-[0.3em] text-white/70">
+            {group.title}
+          </legend>
+          <p className="mt-2 text-sm text-white/70">{group.helper}</p>
+        </div>
+        <button
+          type="button"
+          onClick={onAdd}
+          className="rounded-full border border-teal-300/60 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-teal-200 hover:border-teal-300"
+        >
+          Add
+        </button>
+      </div>
+      <div className="mt-5 space-y-3">
+        {group.options.map((option) => (
+          <EditableOptionRow
+            key={`${option.value}-${option.label}-${option.description}`}
+            option={option}
+            name={name}
+            checked={value === option.value}
+            onSelect={() => onChange(option.value)}
+            onDelete={() => onDelete(option.value)}
+            onEdit={(next) => onEdit(option.value, next)}
+          />
+        ))}
+      </div>
+    </fieldset>
+  );
+}
+
 function ConfiguratorCanvas({
   focus,
   modelConfig,
@@ -328,11 +471,127 @@ function ConfiguratorCanvas({
   );
 }
 
-export default function Home({ config: configProp, classNames }: HomeProps) {
-  const config = useMemo(() => configProp ?? defaultConfig, [configProp]);
+type DraggedChapter = {
+  id: string;
+  index: number;
+};
+
+function DraggableChapterItem({
+  chapter,
+  index,
+  moveChapter,
+}: {
+  chapter: Config["chapters"][number];
+  index: number;
+  moveChapter: (from: number, to: number) => void;
+}) {
+  const ref = useRef<HTMLDivElement | null>(null);
+
+  const [, drop] = useDrop<DraggedChapter>({
+    accept: ItemTypes.CHAPTER,
+    hover(item, monitor) {
+      if (!ref.current) return;
+      const dragIndex = item.index;
+      const hoverIndex = index;
+      if (dragIndex === hoverIndex) return;
+
+      const hoverBoundingRect = ref.current.getBoundingClientRect();
+      const hoverMiddleY = (hoverBoundingRect.bottom - hoverBoundingRect.top) / 2;
+      const clientOffset = monitor.getClientOffset();
+      if (!clientOffset) return;
+      const hoverClientY = clientOffset.y - hoverBoundingRect.top;
+
+      if (dragIndex < hoverIndex && hoverClientY < hoverMiddleY) return;
+      if (dragIndex > hoverIndex && hoverClientY > hoverMiddleY) return;
+
+      moveChapter(dragIndex, hoverIndex);
+      item.index = hoverIndex;
+    },
+  });
+
+  const [{ isDragging }, drag] = useDrag({
+    type: ItemTypes.CHAPTER,
+    item: { id: chapter.id, index },
+    collect: (monitor) => ({
+      isDragging: monitor.isDragging(),
+    }),
+  });
+
+  useEffect(() => {
+    if (!ref.current) return;
+    const node = ref.current;
+    drag(drop(node));
+  }, [drag, drop]);
+
+  return (
+    <div
+      ref={ref}
+      className="flex cursor-move items-center justify-between rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white/80 shadow-sm transition hover:border-white/20"
+      style={{ opacity: isDragging ? 0.5 : 1 }}
+    >
+      <span className="flex items-center gap-2">
+        <span className="h-1.5 w-1.5 rounded-full bg-teal-300" aria-hidden />
+        {chapter.title}
+      </span>
+      <span className="text-xs uppercase tracking-[0.2em] text-white/40">{chapter.kicker}</span>
+    </div>
+  );
+}
+
+function DesignSidebar({
+  chapters,
+  moveChapter,
+}: {
+  chapters: Config["chapters"];
+  moveChapter: (from: number, to: number) => void;
+}) {
+  return (
+    <aside className="sticky top-8 max-h-[calc(100vh-4rem)] overflow-auto rounded-3xl border border-white/10 bg-white/5 p-5 shadow-2xl backdrop-blur">
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-xs uppercase tracking-[0.3em] text-teal-200">Design mode</p>
+          <h3 className="text-lg font-semibold text-white">Component tree</h3>
+        </div>
+        <span className="rounded-full bg-white/10 px-3 py-1 text-[11px] uppercase tracking-[0.25em] text-white/70">
+          drag
+        </span>
+      </div>
+
+      <div className="mt-4 space-y-3 text-sm text-white/70">
+        <div className="rounded-2xl border border-white/10 bg-slate-900/60">
+          <div className="border-b border-white/10 px-4 py-3 text-xs uppercase tracking-[0.3em] text-white/50">
+            Layout
+          </div>
+          <div className="divide-y divide-white/5">
+            <div className="px-4 py-3 text-white/80">Hero</div>
+            <div className="space-y-2 px-4 py-3">
+              {chapters.map((chapter, index) => (
+                <DraggableChapterItem
+                  key={chapter.id}
+                  chapter={chapter}
+                  index={index}
+                  moveChapter={moveChapter}
+                />
+              ))}
+            </div>
+            <div className="px-4 py-3 text-white/80">Closing</div>
+          </div>
+        </div>
+        <p className="text-xs text-white/50">Drag chapters to reorder sections in the configurator.</p>
+      </div>
+    </aside>
+  );
+}
+
+function HomeContent({ config, classNames }: { config: Config; classNames?: Partial<HomeClassNames> }) {
   const focusTargets = useMemo(() => buildFocusTargets(config), [config]);
   const focusKeys = useMemo(() => Object.keys(focusTargets) as SceneFocus[], [focusTargets]);
-  const defaultFocus = useMemo(() => getDefaultFocus(config, focusKeys), [config, focusKeys]);
+  const [chapters, setChapters] = useState(config.chapters);
+  const defaultFocus = useMemo(
+    () =>
+      ((chapters[0]?.focus as SceneFocus | undefined) ?? focusKeys[0] ?? ("overview" as SceneFocus)),
+    [chapters, focusKeys]
+  );
 
   const mergedClasses = useMemo(
     () => ({
@@ -342,29 +601,119 @@ export default function Home({ config: configProp, classNames }: HomeProps) {
     [classNames]
   );
 
+  const [mode, setMode] = useState<"design" | "preview">("preview");
+  const [chapterOrder, setChapterOrder] = useState<string[]>(() =>
+    chapters.map((chapter) => chapter.id)
+  );
+  const orderedChapters = useMemo(() => {
+    const byId = new Map(chapters.map((chapter) => [chapter.id, chapter]));
+    const mapped = chapterOrder
+      .map((id) => byId.get(id))
+      .filter((chapter): chapter is Config["chapters"][number] => Boolean(chapter));
+    const missing = chapters.filter((chapter) => !chapterOrder.includes(chapter.id));
+    return [...mapped, ...missing];
+  }, [chapterOrder, chapters]);
+
   const [focus, setFocus] = useState<SceneFocus>(defaultFocus);
   const focusRef = useRef<SceneFocus>(defaultFocus);
   const chapterRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const [selections, setSelections] = useState<Record<string, string>>(() => buildDefaultSelections(config));
+  const isDesignMode = mode === "design";
+
+  const moveChapter = useCallback((fromIndex: number, toIndex: number) => {
+    setChapterOrder((prev) => {
+      const updated = [...prev];
+      const [removed] = updated.splice(fromIndex, 1);
+      updated.splice(toIndex, 0, removed);
+      return updated;
+    });
+  }, []);
+
+  const updateGroupOptions = useCallback(
+    (
+      chapterId: string,
+      groupId: string,
+      updater: (options: ConfiguratorGroup["options"]) => ConfiguratorGroup["options"]
+    ) => {
+      setChapters((prev) =>
+        prev.map((chapter) => {
+          if (chapter.id !== chapterId) return chapter;
+          return {
+            ...chapter,
+            groups: chapter.groups.map((group) =>
+              group.id === groupId ? { ...group, options: updater(group.options) } : group
+            ),
+          };
+        })
+      );
+    },
+    []
+  );
+
+  const handleAddOption = useCallback(
+    (chapterId: string, groupId: string) => {
+      const newOption: RadioOption = {
+        label: "New option",
+        description: "Describe this option",
+        value: `option-${Math.random().toString(36).slice(2, 7)}`,
+      };
+      updateGroupOptions(chapterId, groupId, (options) => [...options, newOption]);
+    },
+    [updateGroupOptions]
+  );
+
+  const handleDeleteOption = useCallback(
+    (chapterId: string, groupId: string, optionValue: string) => {
+      let remainingOptions: RadioOption[] = [];
+      updateGroupOptions(chapterId, groupId, (options) => {
+        const next = options.filter((opt) => opt.value !== optionValue);
+        remainingOptions = next;
+        return next;
+      });
+      setSelections((prev) => {
+        const current = prev[groupId];
+        if (current !== optionValue) return prev;
+        return {
+          ...prev,
+          [groupId]: remainingOptions[0]?.value ?? "",
+        };
+      });
+    },
+    [updateGroupOptions]
+  );
+
+  const handleEditOption = useCallback(
+    (chapterId: string, groupId: string, originalValue: string, next: OptionDraft) => {
+      updateGroupOptions(chapterId, groupId, (options) =>
+        options.map((opt) =>
+          opt.value === originalValue
+            ? { ...opt, label: next.label, description: next.description }
+            : opt
+        )
+      );
+      setSelections((prev) => {
+        if (prev[groupId] !== originalValue) return prev;
+        return {
+          ...prev,
+          [groupId]: originalValue,
+        };
+      });
+    },
+    [updateGroupOptions]
+  );
 
   useEffect(() => {
     useGLTF.preload(config.scene.model.src);
   }, [config.scene.model.src]);
 
   useEffect(() => {
-    setSelections(buildDefaultSelections(config));
-    setFocus(defaultFocus);
-    focusRef.current = defaultFocus;
-  }, [config, defaultFocus]);
-
-  useEffect(() => {
-    if (!config.chapters.length) return;
+    if (!orderedChapters.length) return;
 
     const handleScroll = () => {
       const markerY = window.innerHeight * 0.35;
       let nextFocus: SceneFocus | null = null;
 
-      for (const chapter of config.chapters) {
+      for (const chapter of orderedChapters) {
         const element = chapterRefs.current[chapter.id];
         if (!element) continue;
         const rect = element.getBoundingClientRect();
@@ -388,11 +737,11 @@ export default function Home({ config: configProp, classNames }: HomeProps) {
       window.removeEventListener("scroll", handleScroll);
       window.removeEventListener("resize", handleScroll);
     };
-  }, [config.chapters]);
+  }, [orderedChapters]);
 
   const objectVisibility = useMemo(() => {
     const map: Record<string, boolean> = {};
-    config.chapters.forEach((chapter) => {
+    orderedChapters.forEach((chapter) => {
       chapter.groups.forEach((group) => {
         const selectedValue = selections[group.id];
         const option = group.options.find((opt) => opt.value === selectedValue);
@@ -404,46 +753,86 @@ export default function Home({ config: configProp, classNames }: HomeProps) {
       });
     });
     return map;
-  }, [config.chapters, selections]);
+  }, [orderedChapters, selections]);
 
-  return (
-    <div className={mergedClasses.root}>
-      <main className={mergedClasses.main}>
-        <section className={mergedClasses.heroSection}>
-          <p className={mergedClasses.heroKicker}>{config.hero.kicker}</p>
-          <h1 className={mergedClasses.heroTitle}>{config.hero.title}</h1>
-          {config.hero.paragraphs.map((paragraph, index) => (
-            <p key={index} className={mergedClasses.heroParagraph}>
-              {paragraph}
-            </p>
-          ))}
-        </section>
+  const content = (
+    <div className="space-y-16">
+      <div className="flex justify-end">
+        <div className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/5 p-1 text-xs uppercase tracking-[0.3em] text-white/60 shadow-2xl">
+          <button
+            type="button"
+            onClick={() => setMode("design")}
+            className={`rounded-full px-4 py-2 transition ${
+              isDesignMode ? "bg-white text-slate-900 shadow-lg" : "hover:bg-white/10"
+            }`}
+          >
+            Design
+          </button>
+          <button
+            type="button"
+            onClick={() => setMode("preview")}
+            className={`rounded-full px-4 py-2 transition ${
+              !isDesignMode ? "bg-white text-slate-900 shadow-lg" : "hover:bg-white/10"
+            }`}
+          >
+            Preview
+          </button>
+        </div>
+      </div>
 
-        <section className={mergedClasses.chaptersSection} aria-label="Configurator chapters">
-          <div className={mergedClasses.canvasWrapper}>
-            <ConfiguratorCanvas
-              focus={focus}
-              modelConfig={config.scene.model}
-              visibility={objectVisibility}
-              focusTargets={focusTargets}
-            />
-          </div>
-          {config.chapters.map((chapter) => (
-            <div
-              key={chapter.id}
-              ref={(node) => {
-                chapterRefs.current[chapter.id] = node;
-              }}
-              className={mergedClasses.chapterContainer}
-              aria-label={`${chapter.title} configuration focus`}
-            >
-              <header className={mergedClasses.chapterHeader}>
-                <p className={mergedClasses.chapterKicker}>{chapter.kicker}</p>
-                <h2 className={mergedClasses.chapterTitle}>{chapter.title}</h2>
-                <p className={mergedClasses.chapterDescription}>{chapter.description}</p>
-              </header>
-              <div className={mergedClasses.groupWrapper}>
-                {chapter.groups.map((group) => (
+      <section className={mergedClasses.heroSection}>
+        <p className={mergedClasses.heroKicker}>{config.hero.kicker}</p>
+        <h1 className={mergedClasses.heroTitle}>{config.hero.title}</h1>
+        {config.hero.paragraphs.map((paragraph, index) => (
+          <p key={index} className={mergedClasses.heroParagraph}>
+            {paragraph}
+          </p>
+        ))}
+      </section>
+
+      <section className={mergedClasses.chaptersSection} aria-label="Configurator chapters">
+        <div className={mergedClasses.canvasWrapper}>
+          <ConfiguratorCanvas
+            focus={focus}
+            modelConfig={config.scene.model}
+            visibility={objectVisibility}
+            focusTargets={focusTargets}
+          />
+        </div>
+        {orderedChapters.map((chapter) => (
+          <div
+            key={chapter.id}
+            ref={(node) => {
+              chapterRefs.current[chapter.id] = node;
+            }}
+            className={mergedClasses.chapterContainer}
+            aria-label={`${chapter.title} configuration focus`}
+          >
+            <header className={mergedClasses.chapterHeader}>
+              <p className={mergedClasses.chapterKicker}>{chapter.kicker}</p>
+              <h2 className={mergedClasses.chapterTitle}>{chapter.title}</h2>
+              <p className={mergedClasses.chapterDescription}>{chapter.description}</p>
+            </header>
+            <div className={mergedClasses.groupWrapper}>
+              {chapter.groups.map((group) =>
+                isDesignMode ? (
+                  <EditableConfigGroup
+                    key={group.id}
+                    group={group}
+                    value={selections[group.id]}
+                    onChange={(next) =>
+                      setSelections((prev) => ({
+                        ...prev,
+                        [group.id]: next,
+                      }))
+                    }
+                    onAdd={() => handleAddOption(chapter.id, group.id)}
+                    onDelete={(optionValue) => handleDeleteOption(chapter.id, group.id, optionValue)}
+                    onEdit={(originalValue, next) =>
+                      handleEditOption(chapter.id, group.id, originalValue, next)
+                    }
+                  />
+                ) : (
                   <ConfigRadioGroup
                     key={group.id}
                     id={group.id}
@@ -458,24 +847,48 @@ export default function Home({ config: configProp, classNames }: HomeProps) {
                       }))
                     }
                   />
-                ))}
-              </div>
+                )
+              )}
             </div>
-          ))}
-        </section>
+          </div>
+        ))}
+      </section>
 
-        <section className={mergedClasses.closingSection}>
-          <p className={mergedClasses.closingKicker}>{config.closing.kicker}</p>
-          <h2 className={mergedClasses.closingTitle}>{config.closing.title}</h2>
-          {config.closing.paragraphs.map((paragraph, index) => (
-            <p key={index} className={mergedClasses.closingParagraph}>
-              {paragraph}
-            </p>
-          ))}
-        </section>
-      </main>
+      <section className={mergedClasses.closingSection}>
+        <p className={mergedClasses.closingKicker}>{config.closing.kicker}</p>
+        <h2 className={mergedClasses.closingTitle}>{config.closing.title}</h2>
+        {config.closing.paragraphs.map((paragraph, index) => (
+          <p key={index} className={mergedClasses.closingParagraph}>
+            {paragraph}
+          </p>
+        ))}
+      </section>
     </div>
   );
+
+  return (
+    <DndProvider backend={HTML5Backend}>
+      <div className={mergedClasses.root}>
+        {isDesignMode ? (
+          <div className="flex w-full gap-10 px-6 py-16">
+            <div className="w-[320px] shrink-0">
+              <DesignSidebar chapters={orderedChapters} moveChapter={moveChapter} />
+            </div>
+            <main className="flex-1 space-y-16">{content}</main>
+          </div>
+        ) : (
+          <main className={mergedClasses.main}>{content}</main>
+        )}
+      </div>
+    </DndProvider>
+  );
+}
+
+export default function Home({ config: configProp, classNames }: HomeProps) {
+  const config = useMemo(() => configProp ?? defaultConfig, [configProp]);
+  const configKey = useMemo(() => JSON.stringify(config), [config]);
+
+  return <HomeContent key={configKey} config={config} classNames={classNames} />;
 }
 
 export { defaultConfig, defaultClasses };

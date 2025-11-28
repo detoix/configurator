@@ -105,4 +105,3 @@ export function defineConfiguratorHomeElement(tagName = "configurator-home") {
   return tagName;
 }
 
-export { ConfiguratorHomeElement };
