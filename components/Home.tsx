@@ -119,7 +119,7 @@ const defaultClasses: HomeClassNames = {
   heroParagraph: "text-base text-white/70 md:hidden",
   chaptersSection: "space-y-16",
   canvasWrapper:
-    "sticky top-0 z-20 h-[33vh] min-h-[280px] w-screen max-w-none -mx-6 overflow-hidden rounded-none border border-white/10 bg-black shadow-2xl sm:mx-0 sm:w-full sm:rounded-3xl md:mt-16 md:top-[14rem]",
+    "sticky top-0 z-20 h-[33vh] min-h-[280px] w-screen max-w-none overflow-hidden rounded-none bg-black shadow-2xl sm:mx-0 sm:w-full sm:rounded-3xl md:mt-16 md:top-[14rem]",
   chapterContainer: "space-y-8 pb-32",
   chapterHeader: "space-y-3",
   chapterKicker: "text-sm uppercase tracking-[0.4em] text-teal-200",
@@ -1684,7 +1684,6 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
       let nextFocus: SceneFocus | null = null;
       let nextChapterId: string | null = null;
       let closestDist = Number.POSITIVE_INFINITY;
-      let considered = 0;
 
       for (const chapter of orderedChapters) {
         const candidates = Array.from(
@@ -1700,28 +1699,13 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
         }
         if (!element) continue;
         const rect = element.getBoundingClientRect();
-        considered += 1;
         const mid = (rect.top + rect.bottom) / 2;
         const dist = Math.abs(mid - markerY);
-        // Debug scroll positions for chapter detection
-        console.log("chapter-rect", {
-          id: chapter.id,
-          focus: chapter.focus,
-          top: rect.top,
-          bottom: rect.bottom,
-          mid,
-          markerY,
-          dist,
-        });
         if (dist < closestDist) {
           closestDist = dist;
           nextChapterId = chapter.id;
           nextFocus = chapter.focus as SceneFocus;
         }
-      }
-
-      if (considered === 0) {
-        console.log("chapter-none-visible", { markerY, ordered: orderedChapters.map((c) => c.id) });
       }
 
       if (nextFocus && nextFocus !== focusRef.current) {
@@ -1811,7 +1795,7 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
 
   const content = (
     <div className="flex flex-col gap-6 pb-28 min-h-screen">
-      <section className={`${mergedClasses.heroSection} max-h-[25vh] overflow-auto pr-2`}>
+      <section className={`${mergedClasses.heroSection}  overflow-auto pr-2`}>
         {isDesignMode && isEditingHero ? (
           <div className="space-y-3 rounded-3xl border border-white/10 bg-white/5 p-4">
             <input
@@ -1926,7 +1910,7 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
 
 
       <div
-        className={`${mergedClasses.canvasWrapper} relative flex h-[55vh] min-h-[320px] max-h-[70vh] flex-col transition-all duration-500 ease-in-out ${
+        className={`${mergedClasses.canvasWrapper} relative flex h-[33vh] min-h-[280px] max-h-[70vh] flex-col transition-all duration-500 ease-in-out ${
           matrixActive ? "pointer-events-none opacity-0" : ""
         }`}
       >
