@@ -118,7 +118,7 @@ const defaultClasses: HomeClassNames = {
   heroParagraph: "",
   chaptersSection: "space-y-16",
   canvasWrapper:
-    "sticky top-0 z-20 h-[33vh] min-h-[280px] overflow-hidden rounded-3xl border border-white/10 bg-black shadow-2xl",
+    "sticky top-0 z-20 h-[33vh] min-h-[280px] w-screen max-w-none -mx-6 overflow-hidden rounded-none border border-white/10 bg-black shadow-2xl sm:mx-0 sm:w-full sm:rounded-3xl",
   chapterContainer: "space-y-8 pb-32",
   chapterHeader: "space-y-3",
   chapterKicker: "text-sm uppercase tracking-[0.4em] text-teal-200",
