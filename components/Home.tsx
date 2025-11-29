@@ -815,19 +815,9 @@ function DraggableChapterItem({
   );
 }
 
-function DesignSidebar({
+function ChaptersList({
   orderedChapters,
-  moveChapter,
-  activeChapterId,
-  onAddChapter,
-  onDeleteChapter,
   mode,
-  onModeChange,
-  meshTree,
-  optionModelTarget,
-  onCloseModel,
-  onToggleMesh,
-  optionVisibility,
   mergedClasses,
   chapterRefs,
   editingChapters,
@@ -846,19 +836,9 @@ function DesignSidebar({
   onDeleteGroup,
 }: {
   orderedChapters: Config["chapters"];
-  moveChapter: (from: number, to: number) => void;
-  activeChapterId: string | null;
-  onAddChapter: () => void;
-  onDeleteChapter: (chapterId: string) => void;
   mode: "design" | "preview";
-  onModeChange: (mode: "design" | "preview") => void;
-  meshTree: MeshTreeNode[];
-  optionModelTarget: string | null;
-  onCloseModel: () => void;
-  onToggleMesh: (meshName: string) => void;
-  optionVisibility: Record<string, boolean | undefined>;
   mergedClasses: HomeClassNames;
-  chapterRefs: MutableRefObject<Record<string, HTMLDivElement | null>>;
+  chapterRefs?: MutableRefObject<Record<string, HTMLDivElement | null>>;
   editingChapters: Record<string, boolean>;
   chapterDrafts: Record<string, Partial<Config["chapters"][number]>>;
   updateChapterDraft: (chapterId: string, field: "kicker" | "title" | "description", value: string) => void;
@@ -877,117 +857,21 @@ function DesignSidebar({
   const isDesignMode = mode === "design";
 
   return (
-    <>
-      {/* <aside className="sticky top-8 max-h-[calc(100vh-4rem)] overflow-auto rounded-3xl border border-white/10 bg-white/5 p-5 shadow-2xl backdrop-blur">
-        <div className="mb-4 flex items-center justify-between">
-          <div className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/5 p-1 text-[11px] uppercase tracking-[0.3em] text-white/60 shadow-lg">
-            <button
-              type="button"
-              onClick={() => onModeChange("design")}
-              className={`rounded-full px-3 py-1.5 transition ${
-                mode === "design" ? "bg-white text-slate-900 shadow" : "hover:bg-white/10"
-              }`}
-            >
-              Design
-            </button>
-            <button
-              type="button"
-              onClick={() => onModeChange("preview")}
-              className={`rounded-full px-3 py-1.5 transition ${
-                mode === "preview" ? "bg-white text-slate-900 shadow" : "hover:bg-white/10"
-              }`}
-            >
-              Preview
-            </button>
-          </div>
-        </div>
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-xs uppercase tracking-[0.3em] text-teal-200">Design mode</p>
-            <h3 className="text-lg font-semibold text-white">Component tree</h3>
-          </div>
-          <span className="rounded-full bg-white/10 px-3 py-1 text-[11px] uppercase tracking-[0.25em] text-white/70">
-            drag
-          </span>
-        </div>
-
-        <div className="mt-4 space-y-3 text-sm text-white/70">
-          <div className="rounded-2xl border border-white/10 bg-slate-900/60">
-            <div className="border-b border-white/10 px-4 py-3 text-xs uppercase tracking-[0.3em] text-white/50">
-              Layout
-            </div>
-            <div className="divide-y divide-white/5">
-              <div className="px-4 py-3 text-white/80">Hero</div>
-              <div className="space-y-2 px-4 py-3">
-                {orderedChapters.map((chapter, index) => (
-                  <DraggableChapterItem
-                    key={chapter.id}
-                    chapter={chapter}
-                    index={index}
-                    moveChapter={moveChapter}
-                    onDelete={onDeleteChapter}
-                    active={chapter.id === activeChapterId}
-                  />
-                ))}
-              </div>
-              <div className="px-4 py-3 text-white/80">Closing</div>
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={onAddChapter}
-            className="w-full rounded-2xl border border-teal-300/60 bg-teal-400/10 px-4 py-3 text-center text-xs font-semibold uppercase tracking-[0.2em] text-teal-100 hover:border-teal-300"
-          >
-            Add chapter
-          </button>
-          <p className="text-xs text-white/50">Drag chapters to reorder sections in the configurator.</p>
-        </div>
-
-        {optionModelTarget && (
-          <div className="mt-6 rounded-2xl border border-white/10 bg-slate-900/60 p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs uppercase tracking-[0.3em] text-white/50">Model visibility</p>
-                <h4 className="text-sm font-semibold text-white">{optionModelTarget}</h4>
-              </div>
-              <button
-                type="button"
-                onClick={onCloseModel}
-                className="rounded-full border border-white/20 px-3 py-1 text-xs text-white hover:border-white/40"
-              >
-                Close
-              </button>
-            </div>
-            <div className="mt-4 max-h-72 space-y-2 overflow-auto text-sm text-white/80">
-              {meshTree.map((node) => (
-                <MeshTreeNodeView
-                  key={node.name}
-                  node={node}
-                  visibility={optionVisibility}
-                  onToggle={onToggleMesh}
-                />
-              ))}
-            </div>
-            <p className="mt-2 text-[11px] text-white/50">
-              Toggle meshes this option controls. Unlisted meshes are untouched.
-            </p>
-          </div>
-        )}
-      </aside> */}
-
+    <div className="space-y-8">
       {orderedChapters.map((chapter) => (
-          <div
-            key={chapter.id}
-            ref={(node) => {
-              chapterRefs.current[chapter.id] = node;
-            }}
-            className={mergedClasses.chapterContainer}
-            aria-label={`${chapter.title} configuration focus`}
-          >
+        <div
+          key={chapter.id}
+          ref={(node) => {
+            if (chapterRefs) chapterRefs.current[chapter.id] = node;
+          }}
+          className={isDesignMode ? mergedClasses.chapterContainer : "space-y-3 rounded-2xl border border-white/10 bg-slate-900/60 p-4"}
+          aria-label={`${chapter.title} configuration focus`}
+        >
+          {isDesignMode ? (
             <header className={`${mergedClasses.chapterHeader} flex flex-col gap-3`}>
               <div className="flex items-start justify-between gap-3">
                 <div className="flex-1 space-y-2">
-                  {isDesignMode && editingChapters[chapter.id] ? (
+                  {editingChapters[chapter.id] ? (
                     <>
                       <input
                         className="w-full rounded-lg border border-white/10 bg-slate-900/70 px-3 py-2 text-sm text-white"
@@ -1025,118 +909,63 @@ function DesignSidebar({
                     </>
                   )}
                 </div>
-                    {isDesignMode && (
-                      <div className="flex flex-col gap-2">
-                        {editingChapters[chapter.id] ? (
-                          <>
-                            <button
-                              type="button"
-                              onClick={() => saveChapterEdit(chapter.id)}
-                              className="rounded-full bg-teal-400 px-3 py-1 text-xs font-semibold text-slate-900"
-                            >
-                              Save
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => cancelChapterEdit(chapter.id)}
-                              className="rounded-full border border-white/20 px-3 py-1 text-xs text-white hover:border-white/40"
-                            >
-                              Cancel
-                            </button>
-                          </>
-                        ) : (
-                          <button
-                            type="button"
-                            onClick={() => startChapterEdit(chapter.id, chapter)}
-                            className="rounded-full border border-white/20 px-3 py-1 text-xs text-white hover:border-white/40"
-                          >
-                            Edit
-                          </button>
-                        )}
-                  </div>
-                )}
+                <div className="flex flex-col gap-2">
+                  {editingChapters[chapter.id] ? (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => saveChapterEdit(chapter.id)}
+                        className="rounded-full bg-teal-400 px-3 py-1 text-xs font-semibold text-slate-900"
+                      >
+                        Save
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => cancelChapterEdit(chapter.id)}
+                        className="rounded-full border border-white/20 px-3 py-1 text-xs text-white hover:border-white/40"
+                      >
+                        Cancel
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => startChapterEdit(chapter.id, chapter)}
+                      className="rounded-full border border-white/20 px-3 py-1 text-xs text-white hover:border-white/40"
+                    >
+                      Edit
+                    </button>
+                  )}
+                </div>
               </div>
             </header>
-            <div className={mergedClasses.groupWrapper}>
-              {chapter.groups.map((group) =>
-                isDesignMode ? (
-                <EditableConfigGroup
-                  key={group.id}
-                  group={group}
-                  value={selections[group.id]}
-                  onChange={(next) =>
-                      onChangeSelection(group.id, next)
-                    }
-                    onAdd={() => onAddOption(chapter.id, group.id)}
-                    onDelete={(optionValue) => onDeleteOption(chapter.id, group.id, optionValue)}
-                    onEdit={(originalValue, next) =>
-                      onEditOption(chapter.id, group.id, originalValue, next)
-                    }
-                  onOpenModel={(optionValue) =>
-                    onOpenModel(chapter.id, group.id, optionValue)
-                  }
-                  onDeleteGroup={() => onDeleteGroup(chapter.id, group.id)}
-                />
-                ) : (
-                  <ConfigRadioGroup
-                    key={group.id}
-                    id={group.id}
-                    title={group.title}
-                    helper={group.helper}
-                    options={group.options}
-                    value={selections[group.id]}
-                    onChange={(next) =>
-                      onChangeSelection(group.id, next)
-                    }
-                  />
-                )
-              )}
-              {isDesignMode && (
-                <div className="mt-4 flex justify-end">
-                  <button
-                    type="button"
-                    onClick={() => onAddGroup(chapter.id)}
-                    className="rounded-full border border-teal-300/60 bg-teal-400/10 px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-teal-100 hover:border-teal-300"
-                  >
-                    Add group
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-        ))}
-    </>
-  );
-}
-
-function PreviewSidebar({
-  orderedChapters,
-  selections,
-  onChangeSelection,
-}: {
-  orderedChapters: Config["chapters"];
-  selections: Record<string, string>;
-  onChangeSelection: (groupId: string, value: string) => void;
-}) {
-  return (
-    <aside className="sticky top-8 max-h-[calc(100vh-4rem)] overflow-auto rounded-3xl border border-white/10 bg-white/5 p-5 shadow-2xl backdrop-blur">
-      <div className="mb-4">
-        <p className="text-xs uppercase tracking-[0.3em] text-teal-200">Preview</p>
-        <h3 className="text-lg font-semibold text-white">Chapters</h3>
-      </div>
-      <div className="space-y-4 text-sm text-white/70">
-        {orderedChapters.map((chapter) => (
-          <div
-            key={chapter.id}
-            className="space-y-3 rounded-2xl border border-white/10 bg-slate-900/60 p-4"
-          >
+          ) : (
             <div className="space-y-1">
               <p className="text-[11px] uppercase tracking-[0.3em] text-teal-200">{chapter.kicker}</p>
               <h4 className="text-lg font-semibold text-white">{chapter.title}</h4>
               <p className="text-xs text-white/70">{chapter.description}</p>
             </div>
-            <div className="space-y-3">
-              {chapter.groups.map((group) => (
+          )}
+
+          <div className={isDesignMode ? mergedClasses.groupWrapper : "space-y-3"}>
+            {chapter.groups.map((group) =>
+              isDesignMode ? (
+                <EditableConfigGroup
+                  key={group.id}
+                  group={group}
+                  value={selections[group.id]}
+                  onChange={(next) => onChangeSelection(group.id, next)}
+                  onAdd={() => onAddOption(chapter.id, group.id)}
+                  onDelete={(optionValue) => onDeleteOption(chapter.id, group.id, optionValue)}
+                  onEdit={(originalValue, next) =>
+                    onEditOption(chapter.id, group.id, originalValue, next)
+                  }
+                  onOpenModel={(optionValue) =>
+                    onOpenModel(chapter.id, group.id, optionValue)
+                  }
+                  onDeleteGroup={() => onDeleteGroup(chapter.id, group.id)}
+                />
+              ) : (
                 <ConfigRadioGroup
                   key={group.id}
                   id={group.id}
@@ -1146,11 +975,149 @@ function PreviewSidebar({
                   value={selections[group.id]}
                   onChange={(next) => onChangeSelection(group.id, next)}
                 />
+              )
+            )}
+            {isDesignMode && (
+              <div className="mt-4 flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => onAddGroup(chapter.id)}
+                  className="rounded-full border border-teal-300/60 bg-teal-400/10 px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-teal-100 hover:border-teal-300"
+                >
+                  Add group
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function DesignSidebar({
+  orderedChapters,
+  moveChapter,
+  activeChapterId,
+  onAddChapter,
+  onDeleteChapter,
+  mode,
+  onModeChange,
+  meshTree,
+  optionModelTarget,
+  onCloseModel,
+  onToggleMesh,
+  optionVisibility,
+}: {
+  orderedChapters: Config["chapters"];
+  moveChapter: (from: number, to: number) => void;
+  activeChapterId: string | null;
+  onAddChapter: () => void;
+  onDeleteChapter: (chapterId: string) => void;
+  mode: "design" | "preview";
+  onModeChange: (mode: "design" | "preview") => void;
+  meshTree: MeshTreeNode[];
+  optionModelTarget: string | null;
+  onCloseModel: () => void;
+  onToggleMesh: (meshName: string) => void;
+  optionVisibility: Record<string, boolean | undefined>;
+}) {
+  return (
+    <aside className="mb-8 rounded-3xl border border-white/10 bg-white/5 p-5 shadow-2xl backdrop-blur">
+      <div className="mb-4 flex items-center justify-between">
+        <div className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/5 p-1 text-[11px] uppercase tracking-[0.3em] text-white/60 shadow-lg">
+          <button
+            type="button"
+            onClick={() => onModeChange("design")}
+            className={`rounded-full px-3 py-1.5 transition ${
+              mode === "design" ? "bg-white text-slate-900 shadow" : "hover:bg-white/10"
+            }`}
+          >
+            Design
+          </button>
+          <button
+            type="button"
+            onClick={() => onModeChange("preview")}
+            className={`rounded-full px-3 py-1.5 transition ${
+              mode === "preview" ? "bg-white text-slate-900 shadow" : "hover:bg-white/10"
+            }`}
+          >
+            Preview
+          </button>
+        </div>
+      </div>
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-xs uppercase tracking-[0.3em] text-teal-200">Design mode</p>
+          <h3 className="text-lg font-semibold text-white">Component tree</h3>
+        </div>
+        <span className="rounded-full bg-white/10 px-3 py-1 text-[11px] uppercase tracking-[0.25em] text-white/70">
+          drag
+        </span>
+      </div>
+
+      <div className="mt-4 space-y-3 text-sm text-white/70">
+        <div className="rounded-2xl border border-white/10 bg-slate-900/60">
+          <div className="border-b border-white/10 px-4 py-3 text-xs uppercase tracking-[0.3em] text-white/50">
+            Layout
+          </div>
+          <div className="divide-y divide-white/5">
+            <div className="px-4 py-3 text-white/80">Hero</div>
+            <div className="space-y-2 px-4 py-3">
+              {orderedChapters.map((chapter, index) => (
+                <DraggableChapterItem
+                  key={chapter.id}
+                  chapter={chapter}
+                  index={index}
+                  moveChapter={moveChapter}
+                  onDelete={onDeleteChapter}
+                  active={chapter.id === activeChapterId}
+                />
               ))}
             </div>
+            <div className="px-4 py-3 text-white/80">Closing</div>
           </div>
-        ))}
+        </div>
+        <button
+          type="button"
+          onClick={onAddChapter}
+          className="w-full rounded-2xl border border-teal-300/60 bg-teal-400/10 px-4 py-3 text-center text-xs font-semibold uppercase tracking-[0.2em] text-teal-100 hover:border-teal-300"
+        >
+          Add chapter
+        </button>
+        <p className="text-xs text-white/50">Drag chapters to reorder sections in the configurator.</p>
       </div>
+
+      {optionModelTarget && (
+        <div className="mt-6 rounded-2xl border border-white/10 bg-slate-900/60 p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs uppercase tracking-[0.3em] text-white/50">Model visibility</p>
+              <h4 className="text-sm font-semibold text-white">{optionModelTarget}</h4>
+            </div>
+            <button
+              type="button"
+              onClick={onCloseModel}
+              className="rounded-full border border-white/20 px-3 py-1 text-xs text-white hover:border-white/40"
+            >
+              Close
+            </button>
+          </div>
+          <div className="mt-4 max-h-72 space-y-2 overflow-auto text-sm text-white/80">
+            {meshTree.map((node) => (
+              <MeshTreeNodeView
+                key={node.name}
+                node={node}
+                visibility={optionVisibility}
+                onToggle={onToggleMesh}
+              />
+            ))}
+          </div>
+          <p className="mt-2 text-[11px] text-white/50">
+            Toggle meshes this option controls. Unlisted meshes are untouched.
+          </p>
+        </div>
+      )}
     </aside>
   );
 }
@@ -1217,6 +1184,8 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
   const [focus, setFocus] = useState<SceneFocus>(defaultFocus);
   const focusRef = useRef<SceneFocus>(defaultFocus);
   const chapterRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const chapterListContainerMainRef = useRef<HTMLDivElement | null>(null);
+  const chapterListContainerAsideRef = useRef<HTMLDivElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [selections, setSelections] = useState<Record<string, string>>(() => buildDefaultSelections(config));
   const isDesignMode = mode === "design";
@@ -1709,8 +1678,20 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
   useEffect(() => {
     if (!orderedChapters.length) return;
 
+    const isVisible = (el: HTMLElement | null) => !!el && el.offsetParent !== null;
+    const isScrollable = (el: HTMLElement | null) =>
+      !!el && isVisible(el) && el.scrollHeight > el.clientHeight + 2;
+
+    const getActiveContainer = (): HTMLElement | Window => {
+      if (isScrollable(chapterListContainerMainRef.current)) return chapterListContainerMainRef.current!;
+      if (isScrollable(chapterListContainerAsideRef.current)) return chapterListContainerAsideRef.current!;
+      return window; // fallback for mobile where page scroll drives focus
+    };
+
     const handleScroll = () => {
-      const markerY = window.innerHeight * 0.35;
+      const container = getActiveContainer();
+      const markerY = container instanceof Window ? window.innerHeight * 0.35 : container.clientHeight * 0.35;
+      const containerTop = container instanceof Window ? 0 : container.getBoundingClientRect().top;
       let nextFocus: SceneFocus | null = null;
       let nextChapterId: string | null = null;
 
@@ -1718,7 +1699,9 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
         const element = chapterRefs.current[chapter.id];
         if (!element) continue;
         const rect = element.getBoundingClientRect();
-        if (rect.top <= markerY && rect.bottom >= markerY) {
+        const top = rect.top - containerTop;
+        const bottom = rect.bottom - containerTop;
+        if (top <= markerY && bottom >= markerY) {
           nextFocus = chapter.focus as SceneFocus;
           nextChapterId = chapter.id;
           break;
@@ -1735,11 +1718,14 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
     };
 
     handleScroll();
-    window.addEventListener("scroll", handleScroll, { passive: true });
+    const containers: Array<HTMLElement | Window> = [window];
+    if (chapterListContainerMainRef.current) containers.push(chapterListContainerMainRef.current);
+    if (chapterListContainerAsideRef.current) containers.push(chapterListContainerAsideRef.current);
+    containers.forEach((c) => c.addEventListener("scroll", handleScroll, { passive: true }));
     window.addEventListener("resize", handleScroll);
 
     return () => {
-      window.removeEventListener("scroll", handleScroll);
+      containers.forEach((c) => c.removeEventListener("scroll", handleScroll));
       window.removeEventListener("resize", handleScroll);
     };
   }, [activeChapterId, orderedChapters]);
@@ -1785,9 +1771,33 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
     return map;
   }, [orderedChapters, selections, activeChapterId]);
 
-  const contentRows = "grid-rows-[auto,1fr,auto]";
+  const chaptersListProps = {
+    orderedChapters,
+    mode,
+    mergedClasses,
+    chapterRefs,
+    editingChapters,
+    chapterDrafts,
+    updateChapterDraft,
+    startChapterEdit,
+    saveChapterEdit,
+    cancelChapterEdit,
+    selections,
+    onChangeSelection: (groupId: string, value: string) =>
+      setSelections((prev) => ({
+        ...prev,
+        [groupId]: value,
+      })),
+    onAddGroup: handleAddGroup,
+    onAddOption: handleAddOption,
+    onDeleteOption: handleDeleteOption,
+    onEditOption: handleEditOption,
+    onOpenModel: openOptionModelEditor,
+    onDeleteGroup: handleDeleteGroup,
+  };
+
   const content = (
-    <div className={`grid min-h-screen gap-6 pb-28 ${contentRows}`}>
+    <div className="flex flex-col gap-6 pb-28 min-h-screen">
       <section className={`${mergedClasses.heroSection} max-h-[25vh] overflow-auto pr-2`}>
         {isDesignMode && isEditingHero ? (
           <div className="space-y-3 rounded-3xl border border-white/10 bg-white/5 p-4">
@@ -1900,12 +1910,13 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
         )}
       </section>
 
-      <section className="relative">
-        <div
-          className={`${mergedClasses.canvasWrapper} relative flex h-[55vh] min-h-[320px] max-h-[70vh] flex-col transition-all duration-500 ease-in-out ${
-            matrixActive ? "pointer-events-none opacity-0" : ""
-          }`}
-        >
+
+
+      <div
+        className={`${mergedClasses.canvasWrapper} relative flex h-[55vh] min-h-[320px] max-h-[70vh] flex-col transition-all duration-500 ease-in-out ${
+          matrixActive ? "pointer-events-none opacity-0" : ""
+        }`}
+      >
           <div className="relative flex-1 min-h-0 w-full">
             {isDesignMode && activeChapter && activeFocusKey && (
               <div className="absolute left-3 top-3 z-30 w-[300px] space-y-3 rounded-2xl border border-white/15 bg-slate-900/80 p-3 text-white shadow-2xl backdrop-blur">
@@ -2153,7 +2164,13 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
             />
           </div>
         )}
-      </section>
+
+      <div className="md:hidden px-6 pb-28">
+        <ChaptersList
+          {...chaptersListProps}
+          listContainerRef={chapterListContainerMainRef}
+        />
+      </div>
     </div>
   );
 
@@ -2183,8 +2200,14 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
         {isClient && gltfScene === null && (
           <GltfSceneLoader url={sidebarModelUrl} onLoaded={(scene) => setGltfScene(scene)} />
         )}
-        <div className="flex w-full gap-10 px-6 py-16">
-          <div className="w-[320px] shrink-0 pb-28">
+        
+        <div className="flex flex-col md:flex-row">
+          <main className="flex-1 md:h-screen md:sticky md:top-0 md:overflow-y-auto no-scrollbar">
+            {content}
+          </main>
+          
+          <aside className="hidden md:flex w-[400px] shrink-0 flex-col gap-8 p-6 border-l border-white/10 bg-slate-950/50 backdrop-blur-sm">
+            {isDesignMode && (
               <DesignSidebar
                 orderedChapters={orderedChapters}
                 moveChapter={moveChapter}
@@ -2198,31 +2221,13 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
                 onCloseModel={() => setOptionModelTarget(null)}
                 onToggleMesh={handleToggleMeshVisibility}
                 optionVisibility={optionModelVisibility}
-                mergedClasses={mergedClasses}
-                chapterRefs={chapterRefs}
-                editingChapters={editingChapters}
-                chapterDrafts={chapterDrafts}
-                updateChapterDraft={updateChapterDraft}
-                startChapterEdit={startChapterEdit}
-                saveChapterEdit={saveChapterEdit}
-                cancelChapterEdit={cancelChapterEdit}
-                selections={selections}
-                onChangeSelection={(groupId, next) =>
-                  setSelections((prev) => ({
-                    ...prev,
-                    [groupId]: next,
-                  }))
-                }
-                onAddGroup={handleAddGroup}
-                onAddOption={handleAddOption}
-                onDeleteOption={handleDeleteOption}
-                onEditOption={handleEditOption}
-                onOpenModel={openOptionModelEditor}
-                onDeleteGroup={handleDeleteGroup}
               />
-            
-          </div>
-          <main className="sticky top-0 flex-1 h-screen overflow-hidden">{content}</main>
+            )}
+            <ChaptersList
+              {...chaptersListProps}
+              listContainerRef={chapterListContainerAsideRef}
+            />
+          </aside>
         </div>
 
         {priceBar}
