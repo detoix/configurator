@@ -115,10 +115,10 @@ const defaultClasses: HomeClassNames = {
   heroSection: "space-y-10 text-lg leading-relaxed text-slate-200",
   heroKicker: "text-sm uppercase tracking-[0.5em] text-teal-200",
   heroTitle: "text-4xl font-semibold text-white sm:text-6xl",
-  heroParagraph: "",
+  heroParagraph: "text-base text-white/70 md:hidden",
   chaptersSection: "space-y-16",
   canvasWrapper:
-    "sticky top-0 z-20 h-[33vh] min-h-[280px] w-screen max-w-none -mx-6 overflow-hidden rounded-none border border-white/10 bg-black shadow-2xl sm:mx-0 sm:w-full sm:rounded-3xl",
+    "sticky top-0 z-20 h-[33vh] min-h-[280px] w-screen max-w-none -mx-6 overflow-hidden rounded-none border border-white/10 bg-black shadow-2xl sm:mx-0 sm:w-full sm:rounded-3xl md:top-32",
   chapterContainer: "space-y-8 pb-32",
   chapterHeader: "space-y-3",
   chapterKicker: "text-sm uppercase tracking-[0.4em] text-teal-200",
@@ -1681,7 +1681,7 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
           </div>
         ) : (
           <>
-            <div className="flex items-start justify-between gap-3">
+            <div className="flex items-start justify-between gap-3 md:hidden">
               <div className="flex-1 space-y-2">
                 <p className={mergedClasses.heroKicker}>{hero.kicker}</p>
                 <h1 className={mergedClasses.heroTitle}>{hero.title}</h1>
@@ -1707,6 +1707,27 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
           </>
         )}
       </section>
+
+      <div className="sticky top-0 z-30 hidden md:block -mx-6 border-b border-white/10 bg-slate-950/90 px-6 py-5 backdrop-blur">
+        <div className="mx-auto flex max-w-6xl items-start justify-between gap-3">
+          <div className="space-y-2">
+            <p className={mergedClasses.heroKicker}>{hero.kicker}</p>
+            <h1 className={mergedClasses.heroTitle}>{hero.title}</h1>
+          </div>
+          {isDesignMode && (
+            <button
+              type="button"
+              onClick={() => {
+                setHeroDraft(hero);
+                setIsEditingHero(true);
+              }}
+              className="rounded-full border border-white/20 px-3 py-1 text-xs text-white hover:border-white/40"
+            >
+              Edit
+            </button>
+          )}
+        </div>
+      </div>
 
       <section className={mergedClasses.chaptersSection} aria-label="Configurator chapters">
         <div
