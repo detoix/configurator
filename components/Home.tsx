@@ -118,7 +118,7 @@ const defaultClasses: HomeClassNames = {
   heroParagraph: "text-base text-white/70 md:hidden",
   chaptersSection: "space-y-16",
   canvasWrapper:
-    "sticky top-0 z-20 h-[33vh] min-h-[280px] w-screen max-w-none -mx-6 overflow-hidden rounded-none border border-white/10 bg-black shadow-2xl sm:mx-0 sm:w-full sm:rounded-3xl md:top-32",
+    "sticky top-0 z-20 h-[33vh] min-h-[280px] w-screen max-w-none -mx-6 overflow-hidden rounded-none border border-white/10 bg-black shadow-2xl sm:mx-0 sm:w-full sm:rounded-3xl md:mt-16 md:top-[14rem]",
   chapterContainer: "space-y-8 pb-32",
   chapterHeader: "space-y-3",
   chapterKicker: "text-sm uppercase tracking-[0.4em] text-teal-200",
@@ -1431,8 +1431,8 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
 
   const priceBar = useMemo(
     () => (
-      <div className="fixed bottom-4 left-1/2 z-40 w-full max-w-4xl -translate-x-1/2 px-4">
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-white/10 bg-slate-900/90 px-5 py-3 text-sm text-white/80 shadow-2xl backdrop-blur">
+      <div className="fixed inset-x-0 bottom-0 z-40 px-0 md:bottom-4 md:left-1/2 md:right-auto md:w-full md:max-w-4xl md:-translate-x-1/2 md:px-4 md:pb-0">
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-none border-t border-white/10 bg-slate-900/90 px-5 py-3 text-sm text-white/80 shadow-2xl backdrop-blur md:rounded-2xl md:border">
           <div>
             <span className="text-xs uppercase tracking-[0.2em] text-white/50">Total</span>
             <span className="ml-2 text-lg font-semibold text-white">{currency.format(totalPrice)}</span>
