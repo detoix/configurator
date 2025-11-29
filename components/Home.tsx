@@ -116,10 +116,10 @@ const defaultClasses: HomeClassNames = {
   heroSection: "space-y-10 text-lg leading-relaxed text-slate-200",
   heroKicker: "text-sm uppercase tracking-[0.5em] text-teal-200",
   heroTitle: "text-4xl font-semibold text-white sm:text-6xl",
-  heroParagraph: "text-base text-white/70 md:hidden",
+  heroParagraph: "text-base text-white/70",
   chaptersSection: "space-y-16",
   canvasWrapper:
-    "sticky top-0 z-20 h-[33vh] min-h-[280px] w-screen max-w-none overflow-hidden rounded-none bg-black shadow-2xl sm:mx-0 sm:w-full sm:rounded-3xl md:mt-16 md:top-[14rem]",
+    "sticky top-0 z-20 h-[33vh] min-h-[280px] max-h-[70vh] w-screen max-w-none overflow-hidden rounded-none bg-black shadow-2xl sm:mx-0 sm:w-full sm:rounded-3xl md:static md:top-auto md:h-full md:min-h-0 md:max-h-none md:w-full md:rounded-3xl",
   chapterContainer: "space-y-8 pb-32",
   chapterHeader: "space-y-3",
   chapterKicker: "text-sm uppercase tracking-[0.4em] text-teal-200",
@@ -1794,126 +1794,124 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
   };
 
   const content = (
-    <div className="flex flex-col gap-6 pb-28 min-h-screen">
+    <div className="flex flex-col gap-6 pb-28 min-h-screen md:pb-0 md:min-h-screen md:grid md:grid-rows-[auto,1fr] md:gap-8">
       <section className={`${mergedClasses.heroSection}  overflow-auto pr-2`}>
-        {isDesignMode && isEditingHero ? (
-          <div className="space-y-3 rounded-3xl border border-white/10 bg-white/5 p-4">
-            <input
-              className="w-full rounded-lg border border-white/10 bg-slate-900/70 px-3 py-2 text-sm uppercase tracking-[0.4em] text-white"
-              value={heroDraft.kicker}
-              onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                setHeroDraft((prev) => ({ ...prev, kicker: e.target.value }))
-              }
-              placeholder="Kicker"
-            />
-            <input
-              className="w-full rounded-lg border border-white/10 bg-slate-900/70 px-3 py-2 text-3xl font-semibold text-white"
-              value={heroDraft.title}
-              onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                setHeroDraft((prev) => ({ ...prev, title: e.target.value }))
-              }
-              placeholder="Title"
-            />
-            <div className="space-y-2">
-              {heroDraft.paragraphs.map((paragraph, index) => (
-                <div key={index} className="flex items-start gap-2">
-                  <textarea
-                    className="w-full rounded-lg border border-white/10 bg-slate-900/70 px-3 py-2 text-sm text-white"
-                    value={paragraph}
-                    onChange={(e: ChangeEvent<HTMLTextAreaElement>) =>
-                      setHeroDraft((prev) => {
-                        const next = [...prev.paragraphs];
-                        next[index] = e.target.value;
-                        return { ...prev, paragraphs: next };
-                      })
-                    }
-                    rows={2}
-                  />
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setHeroDraft((prev) => ({
-                        ...prev,
-                        paragraphs: prev.paragraphs.filter((_, i) => i !== index),
-                      }))
-                    }
-                    className="rounded-full border border-white/20 px-3 py-1 text-xs text-white hover:border-red-300 hover:text-red-200"
-                  >
-                    Delete
-                  </button>
-                </div>
-              ))}
-              <button
-                type="button"
-                onClick={() =>
-                  setHeroDraft((prev) => ({ ...prev, paragraphs: [...prev.paragraphs, ""] }))
+          {isDesignMode && isEditingHero ? (
+            <div className="space-y-3 rounded-3xl border border-white/10 bg-white/5 p-4">
+              <input
+                className="w-full rounded-lg border border-white/10 bg-slate-900/70 px-3 py-2 text-sm uppercase tracking-[0.4em] text-white"
+                value={heroDraft.kicker}
+                onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                  setHeroDraft((prev) => ({ ...prev, kicker: e.target.value }))
                 }
-                className="rounded-full border border-teal-300/60 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-teal-200 hover:border-teal-300"
-              >
-                Add paragraph
-              </button>
-            </div>
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={() => {
-                  setHero(heroDraft);
-                  setIsEditingHero(false);
-                }}
-                className="rounded-full bg-teal-400 px-4 py-2 text-xs font-semibold text-slate-900"
-              >
-                Save
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setHeroDraft(hero);
-                  setIsEditingHero(false);
-                }}
-                className="rounded-full border border-white/20 px-4 py-2 text-xs text-white hover:border-white/40"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        ) : (
-          <>
-            <div className="flex items-start justify-between gap-3">
-              <div className="flex-1 space-y-2">
-                <p className={mergedClasses.heroKicker}>{hero.kicker}</p>
-                <h1 className={mergedClasses.heroTitle}>{hero.title}</h1>
+                placeholder="Kicker"
+              />
+              <input
+                className="w-full rounded-lg border border-white/10 bg-slate-900/70 px-3 py-2 text-3xl font-semibold text-white"
+                value={heroDraft.title}
+                onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                  setHeroDraft((prev) => ({ ...prev, title: e.target.value }))
+                }
+                placeholder="Title"
+              />
+              <div className="space-y-2">
+                {heroDraft.paragraphs.map((paragraph, index) => (
+                  <div key={index} className="flex items-start gap-2">
+                    <textarea
+                      className="w-full rounded-lg border border-white/10 bg-slate-900/70 px-3 py-2 text-sm text-white"
+                      value={paragraph}
+                      onChange={(e: ChangeEvent<HTMLTextAreaElement>) =>
+                        setHeroDraft((prev) => {
+                          const next = [...prev.paragraphs];
+                          next[index] = e.target.value;
+                          return { ...prev, paragraphs: next };
+                        })
+                      }
+                      rows={2}
+                    />
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setHeroDraft((prev) => ({
+                          ...prev,
+                          paragraphs: prev.paragraphs.filter((_, i) => i !== index),
+                        }))
+                      }
+                      className="rounded-full border border-white/20 px-3 py-1 text-xs text-white hover:border-red-300 hover:text-red-200"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  onClick={() =>
+                    setHeroDraft((prev) => ({ ...prev, paragraphs: [...prev.paragraphs, ""] }))
+                  }
+                  className="rounded-full border border-teal-300/60 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-teal-200 hover:border-teal-300"
+                >
+                  Add paragraph
+                </button>
               </div>
-              {isDesignMode && (
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setHero(heroDraft);
+                    setIsEditingHero(false);
+                  }}
+                  className="rounded-full bg-teal-400 px-4 py-2 text-xs font-semibold text-slate-900"
+                >
+                  Save
+                </button>
                 <button
                   type="button"
                   onClick={() => {
                     setHeroDraft(hero);
-                    setIsEditingHero(true);
+                    setIsEditingHero(false);
                   }}
-                  className="rounded-full border border-white/20 px-3 py-1 text-xs text-white hover:border-white/40"
+                  className="rounded-full border border-white/20 px-4 py-2 text-xs text-white hover:border-white/40"
                 >
-                  Edit
+                  Cancel
                 </button>
-              )}
+              </div>
             </div>
-            <div className="space-y-2">
-              {hero.paragraphs.map((paragraph, index) => (
-                <p key={index} className={mergedClasses.heroParagraph}>
-                  {paragraph}
-                </p>
-              ))}
-            </div>
-          </>
-        )}
-      </section>
+          ) : (
+            <>
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex-1 space-y-2">
+                  <p className={mergedClasses.heroKicker}>{hero.kicker}</p>
+                  <h1 className={mergedClasses.heroTitle}>{hero.title}</h1>
+                </div>
+                {isDesignMode && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setHeroDraft(hero);
+                      setIsEditingHero(true);
+                    }}
+                    className="rounded-full border border-white/20 px-3 py-1 text-xs text-white hover:border-white/40"
+                  >
+                    Edit
+                  </button>
+                )}
+              </div>
+              <div className="space-y-2">
+                {hero.paragraphs.map((paragraph, index) => (
+                  <p key={index} className={mergedClasses.heroParagraph}>
+                    {paragraph}
+                  </p>
+                ))}
+              </div>
+            </>
+          )}
+        </section>
 
-
-
-      <div
-        className={`${mergedClasses.canvasWrapper} relative flex h-[33vh] min-h-[280px] max-h-[70vh] flex-col transition-all duration-500 ease-in-out ${
-          matrixActive ? "pointer-events-none opacity-0" : ""
-        }`}
-      >
+        <div
+          className={`${mergedClasses.canvasWrapper} flex h-[33vh] min-h-[280px] max-h-[70vh] flex-col transition-all duration-500 ease-in-out md:h-full md:min-h-0 md:max-h-none ${
+            matrixActive ? "pointer-events-none opacity-0" : ""
+          }`}
+        >
           <div className="relative flex-1 min-h-0 w-full">
             {isDesignMode && activeChapter && activeFocusKey && (
               <div className="absolute left-3 top-3 z-30 w-[300px] space-y-3 rounded-2xl border border-white/15 bg-slate-900/80 p-3 text-white shadow-2xl backdrop-blur">
@@ -2032,135 +2030,135 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
             />
           </div>
         </div>
-        {matrixActive && (
-          <div className="fixed inset-0 z-50 flex h-[100dvh] flex-col overflow-hidden bg-black">
-            <div className="relative flex-1 min-h-0 w-full">
-              {isDesignMode && activeChapter && activeFocusKey && (
-                <div className="absolute left-3 top-3 z-30 w-[300px] space-y-3 rounded-2xl border border-white/15 bg-slate-900/80 p-3 text-white shadow-2xl backdrop-blur">
-                  <div className="flex items-center justify-between text-xs uppercase tracking-[0.25em] text-white/60">
-                    <span>Camera</span>
-                    <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] text-teal-100">
-                      {activeFocusKey}
-                    </span>
-                  </div>
-                  <div className="flex flex-col gap-2 text-sm text-white/80">
-                    {!orbitEnabled && (
-                      <>
+      {matrixActive && (
+        <div className="fixed inset-0 z-50 flex h-[100dvh] flex-col overflow-hidden bg-black">
+          <div className="relative flex-1 min-h-0 w-full">
+            {isDesignMode && activeChapter && activeFocusKey && (
+              <div className="absolute left-3 top-3 z-30 w-[300px] space-y-3 rounded-2xl border border-white/15 bg-slate-900/80 p-3 text-white shadow-2xl backdrop-blur">
+                <div className="flex items-center justify-between text-xs uppercase tracking-[0.25em] text-white/60">
+                  <span>Camera</span>
+                  <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] text-teal-100">
+                    {activeFocusKey}
+                  </span>
+                </div>
+                <div className="flex flex-col gap-2 text-sm text-white/80">
+                  {!orbitEnabled && (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const snapshot =
+                            orbitCameraState ?? preOrbitCameraState ?? deriveCameraFromFocus(activeFocusKey);
+                          if (snapshot) {
+                            setOrbitCameraState(snapshot);
+                            setPreOrbitCameraState(snapshot);
+                          } else {
+                            setPreOrbitCameraState(null);
+                          }
+                          setOrbitEnabled(true);
+                        }}
+                        className="rounded-full bg-white/10 px-3 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-white hover:bg-white/20"
+                      >
+                        Change camera
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setIsMatrixOpen((prev) => !prev)}
+                        className={`rounded-full border border-teal-300/60 px-3 py-2 text-xs font-semibold uppercase tracking-[0.2em] transition-colors ${
+                          isMatrixOpen
+                            ? "bg-teal-400 text-slate-900 border-teal-400"
+                            : "text-teal-200 hover:border-teal-300 hover:bg-teal-400/10"
+                        }`}
+                      >
+                        {isMatrixOpen ? "Close Model" : "Model"}
+                      </button>
+                    </>
+                  )}
+                  {orbitEnabled && (
+                    <div className="space-y-2">
+                      <p className="text-[11px] text-white/60">Use orbit to frame the shot.</p>
+                      <div className="flex gap-2">
                         <button
                           type="button"
                           onClick={() => {
                             const snapshot =
-                              orbitCameraState ?? preOrbitCameraState ?? deriveCameraFromFocus(activeFocusKey);
-                            if (snapshot) {
-                              setOrbitCameraState(snapshot);
-                              setPreOrbitCameraState(snapshot);
-                            } else {
-                              setPreOrbitCameraState(null);
-                            }
-                            setOrbitEnabled(true);
+                              preOrbitCameraState ?? deriveCameraFromFocus(activeFocusKey) ?? orbitCameraState;
+                            setOrbitCameraState(snapshot);
+                            setOrbitEnabled(false);
+                            setResetCameraToken((t) => t + 1);
                           }}
-                          className="rounded-full bg-white/10 px-3 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-white hover:bg-white/20"
+                          className="flex-1 rounded-full border border-white/20 bg-white/10 px-3 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-white hover:border-teal-300 hover:text-teal-100"
                         >
-                          Change camera
+                          Reset
                         </button>
                         <button
                           type="button"
-                          onClick={() => setIsMatrixOpen((prev) => !prev)}
-                          className={`rounded-full border border-teal-300/60 px-3 py-2 text-xs font-semibold uppercase tracking-[0.2em] transition-colors ${
-                            isMatrixOpen
-                              ? "bg-teal-400 text-slate-900 border-teal-400"
-                              : "text-teal-200 hover:border-teal-300 hover:bg-teal-400/10"
+                          onClick={handleKeepCurrentView}
+                          disabled={!orbitCameraState}
+                          className={`flex-1 rounded-full px-3 py-2 text-xs font-semibold uppercase tracking-[0.2em] shadow ${
+                            orbitCameraState
+                              ? "bg-teal-400 text-slate-900 hover:bg-teal-300"
+                              : "bg-white/10 text-white/60"
                           }`}
                         >
-                          {isMatrixOpen ? "Close Model" : "Model"}
+                          Keep this view
                         </button>
-                      </>
-                    )}
-                    {orbitEnabled && (
-                      <div className="space-y-2">
-                        <p className="text-[11px] text-white/60">Use orbit to frame the shot.</p>
-                        <div className="flex gap-2">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const snapshot =
-                                preOrbitCameraState ?? deriveCameraFromFocus(activeFocusKey) ?? orbitCameraState;
-                              setOrbitCameraState(snapshot);
-                              setOrbitEnabled(false);
-                              setResetCameraToken((t) => t + 1);
-                            }}
-                            className="flex-1 rounded-full border border-white/20 bg-white/10 px-3 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-white hover:border-teal-300 hover:text-teal-100"
-                          >
-                            Reset
-                          </button>
-                          <button
-                            type="button"
-                            onClick={handleKeepCurrentView}
-                            disabled={!orbitCameraState}
-                            className={`flex-1 rounded-full px-3 py-2 text-xs font-semibold uppercase tracking-[0.2em] shadow ${
-                              orbitCameraState
-                                ? "bg-teal-400 text-slate-900 hover:bg-teal-300"
-                                : "bg-white/10 text-white/60"
-                            }`}
-                          >
-                            Keep this view
-                          </button>
-                        </div>
                       </div>
-                    )}
-                  </div>
-                  <p className="text-[11px] text-white/50">
-                    Stored for <span className="font-semibold text-white">{activeChapter.title}</span>.
-                  </p>
+                    </div>
+                  )}
                 </div>
-              )}
-              {isDesignMode && (
-                <div className="absolute right-3 top-3 z-30 flex gap-2">
-                  <button
-                    type="button"
-                    onClick={handleUploadModelClick}
-                    className="rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-white shadow hover:border-teal-300 hover:text-teal-100"
-                  >
-                    Upload model
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleReplaceModel}
-                    className="rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-white shadow hover:border-teal-300 hover:text-teal-100"
-                  >
-                    Use URL
-                  </button>
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept=".glb,.gltf,model/gltf-binary,model/gltf+json"
-                    className="hidden"
-                    onChange={handleFileInput}
-                  />
-                </div>
-              )}
-              <ConfiguratorCanvas
-                focus={focus}
-                modelConfig={sceneModel}
-                visibility={objectVisibility}
-                focusTargets={focusTargets}
-                gltfScene={gltfScene}
-                orbitEnabled={orbitEnabled}
-                onOrbitCameraChange={setOrbitCameraState}
-                orbitCameraState={orbitCameraState}
-                resetToken={resetCameraToken}
-              />
-            </div>
-            <VisibilityMatrix
-              isOpen={matrixActive}
-              onClose={() => setIsMatrixOpen(false)}
-              chapters={orderedChapters}
-              meshTree={meshTree}
-              onUpdateChapterVisibility={handleUpdateChapterVisibility}
-              onUpdateOptionVisibility={handleUpdateOptionVisibility}
+                <p className="text-[11px] text-white/50">
+                  Stored for <span className="font-semibold text-white">{activeChapter.title}</span>.
+                </p>
+              </div>
+            )}
+            {isDesignMode && (
+              <div className="absolute right-3 top-3 z-30 flex gap-2">
+                <button
+                  type="button"
+                  onClick={handleUploadModelClick}
+                  className="rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-white shadow hover:border-teal-300 hover:text-teal-100"
+                >
+                  Upload model
+                </button>
+                <button
+                  type="button"
+                  onClick={handleReplaceModel}
+                  className="rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-white shadow hover:border-teal-300 hover:text-teal-100"
+                >
+                  Use URL
+                </button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".glb,.gltf,model/gltf-binary,model/gltf+json"
+                  className="hidden"
+                  onChange={handleFileInput}
+                />
+              </div>
+            )}
+            <ConfiguratorCanvas
+              focus={focus}
+              modelConfig={sceneModel}
+              visibility={objectVisibility}
+              focusTargets={focusTargets}
+              gltfScene={gltfScene}
+              orbitEnabled={orbitEnabled}
+              onOrbitCameraChange={setOrbitCameraState}
+              orbitCameraState={orbitCameraState}
+              resetToken={resetCameraToken}
             />
           </div>
-        )}
+          <VisibilityMatrix
+            isOpen={matrixActive}
+            onClose={() => setIsMatrixOpen(false)}
+            chapters={orderedChapters}
+            meshTree={meshTree}
+            onUpdateChapterVisibility={handleUpdateChapterVisibility}
+            onUpdateOptionVisibility={handleUpdateOptionVisibility}
+          />
+        </div>
+      )}
 
       <div className="md:hidden px-6 pb-28">
         <ChaptersList {...chaptersListProps} trackFocus />
@@ -2200,25 +2198,27 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
             {content}
           </main>
           
-          <aside className="hidden md:flex w-[400px] shrink-0 flex-col gap-8 p-6 border-l border-white/10 bg-slate-950/50 backdrop-blur-sm">
-            {isDesignMode && (
-              <DesignSidebar
-                orderedChapters={orderedChapters}
-                moveChapter={moveChapter}
-                activeChapterId={activeChapterId}
-                onAddChapter={addChapter}
-                onDeleteChapter={deleteChapter}
-                mode={mode}
-                onModeChange={handleModeChange}
-                meshTree={meshTree}
-                optionModelTarget={optionModelTarget?.optionValue ?? null}
-                onCloseModel={() => setOptionModelTarget(null)}
-                onToggleMesh={handleToggleMeshVisibility}
-                optionVisibility={optionModelVisibility}
-              />
-            )}
-            <ChaptersList {...chaptersListProps} trackFocus />
-          </aside>
+          {!matrixActive && (
+            <aside className="hidden md:flex w-[400px] shrink-0 flex-col gap-8 p-6 border-l border-white/10 bg-slate-950/50 backdrop-blur-sm">
+              {isDesignMode && (
+                <DesignSidebar
+                  orderedChapters={orderedChapters}
+                  moveChapter={moveChapter}
+                  activeChapterId={activeChapterId}
+                  onAddChapter={addChapter}
+                  onDeleteChapter={deleteChapter}
+                  mode={mode}
+                  onModeChange={handleModeChange}
+                  meshTree={meshTree}
+                  optionModelTarget={optionModelTarget?.optionValue ?? null}
+                  onCloseModel={() => setOptionModelTarget(null)}
+                  onToggleMesh={handleToggleMeshVisibility}
+                  optionVisibility={optionModelVisibility}
+                />
+              )}
+              <ChaptersList {...chaptersListProps} trackFocus />
+            </aside>
+          )}
         </div>
 
         {priceBar}
