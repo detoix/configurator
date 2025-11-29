@@ -834,6 +834,7 @@ function ChaptersList({
   onEditOption,
   onOpenModel,
   onDeleteGroup,
+  trackFocus = false,
 }: {
   orderedChapters: Config["chapters"];
   mode: "design" | "preview";
@@ -853,17 +854,19 @@ function ChaptersList({
   onEditOption: (chapterId: string, groupId: string, originalValue: string, next: OptionDraft) => void;
   onOpenModel: (chapterId: string, groupId: string, optionValue: string) => void;
   onDeleteGroup: (chapterId: string, groupId: string) => void;
+  trackFocus?: boolean;
 }) {
   const isDesignMode = mode === "design";
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 chapter-list-container">
       {orderedChapters.map((chapter) => (
         <div
           key={chapter.id}
           ref={(node) => {
-            if (chapterRefs) chapterRefs.current[chapter.id] = node;
+            if (trackFocus && chapterRefs) chapterRefs.current[chapter.id] = node;
           }}
+          data-chapter-id={chapter.id}
           className={isDesignMode ? mergedClasses.chapterContainer : "space-y-3 rounded-2xl border border-white/10 bg-slate-900/60 p-4"}
           aria-label={`${chapter.title} configuration focus`}
         >
@@ -1184,8 +1187,6 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
   const [focus, setFocus] = useState<SceneFocus>(defaultFocus);
   const focusRef = useRef<SceneFocus>(defaultFocus);
   const chapterRefs = useRef<Record<string, HTMLDivElement | null>>({});
-  const chapterListContainerMainRef = useRef<HTMLDivElement | null>(null);
-  const chapterListContainerAsideRef = useRef<HTMLDivElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [selections, setSelections] = useState<Record<string, string>>(() => buildDefaultSelections(config));
   const isDesignMode = mode === "design";
@@ -1678,34 +1679,49 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
   useEffect(() => {
     if (!orderedChapters.length) return;
 
-    const isVisible = (el: HTMLElement | null) => !!el && el.offsetParent !== null;
-    const isScrollable = (el: HTMLElement | null) =>
-      !!el && isVisible(el) && el.scrollHeight > el.clientHeight + 2;
-
-    const getActiveContainer = (): HTMLElement | Window => {
-      if (isScrollable(chapterListContainerMainRef.current)) return chapterListContainerMainRef.current!;
-      if (isScrollable(chapterListContainerAsideRef.current)) return chapterListContainerAsideRef.current!;
-      return window; // fallback for mobile where page scroll drives focus
-    };
-
     const handleScroll = () => {
-      const container = getActiveContainer();
-      const markerY = container instanceof Window ? window.innerHeight * 0.35 : container.clientHeight * 0.35;
-      const containerTop = container instanceof Window ? 0 : container.getBoundingClientRect().top;
+      const markerY = window.innerHeight * 0.35;
       let nextFocus: SceneFocus | null = null;
       let nextChapterId: string | null = null;
+      let closestDist = Number.POSITIVE_INFINITY;
+      let considered = 0;
 
       for (const chapter of orderedChapters) {
-        const element = chapterRefs.current[chapter.id];
+        const candidates = Array.from(
+          document.querySelectorAll<HTMLElement>(`[data-chapter-id="${chapter.id}"]`)
+        );
+        let element: HTMLElement | null = null;
+        for (const cand of candidates) {
+          const r = cand.getBoundingClientRect();
+          if (r.height > 1 && r.width > 1) {
+            element = cand;
+            break;
+          }
+        }
         if (!element) continue;
         const rect = element.getBoundingClientRect();
-        const top = rect.top - containerTop;
-        const bottom = rect.bottom - containerTop;
-        if (top <= markerY && bottom >= markerY) {
-          nextFocus = chapter.focus as SceneFocus;
+        considered += 1;
+        const mid = (rect.top + rect.bottom) / 2;
+        const dist = Math.abs(mid - markerY);
+        // Debug scroll positions for chapter detection
+        console.log("chapter-rect", {
+          id: chapter.id,
+          focus: chapter.focus,
+          top: rect.top,
+          bottom: rect.bottom,
+          mid,
+          markerY,
+          dist,
+        });
+        if (dist < closestDist) {
+          closestDist = dist;
           nextChapterId = chapter.id;
-          break;
+          nextFocus = chapter.focus as SceneFocus;
         }
+      }
+
+      if (considered === 0) {
+        console.log("chapter-none-visible", { markerY, ordered: orderedChapters.map((c) => c.id) });
       }
 
       if (nextFocus && nextFocus !== focusRef.current) {
@@ -1717,16 +1733,13 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
       }
     };
 
-    handleScroll();
-    const containers: Array<HTMLElement | Window> = [window];
-    if (chapterListContainerMainRef.current) containers.push(chapterListContainerMainRef.current);
-    if (chapterListContainerAsideRef.current) containers.push(chapterListContainerAsideRef.current);
-    containers.forEach((c) => c.addEventListener("scroll", handleScroll, { passive: true }));
+    requestAnimationFrame(handleScroll);
+    window.addEventListener("scroll", handleScroll, { passive: true });
     window.addEventListener("resize", handleScroll);
 
     return () => {
-      containers.forEach((c) => c.removeEventListener("scroll", handleScroll));
       window.removeEventListener("resize", handleScroll);
+      window.removeEventListener("scroll", handleScroll);
     };
   }, [activeChapterId, orderedChapters]);
 
@@ -2166,10 +2179,7 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
         )}
 
       <div className="md:hidden px-6 pb-28">
-        <ChaptersList
-          {...chaptersListProps}
-          listContainerRef={chapterListContainerMainRef}
-        />
+        <ChaptersList {...chaptersListProps} trackFocus />
       </div>
     </div>
   );
@@ -2223,10 +2233,7 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
                 optionVisibility={optionModelVisibility}
               />
             )}
-            <ChaptersList
-              {...chaptersListProps}
-              listContainerRef={chapterListContainerAsideRef}
-            />
+            <ChaptersList {...chaptersListProps} trackFocus />
           </aside>
         </div>
 
