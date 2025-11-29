@@ -17,6 +17,7 @@ import { OrbitControls, useGLTF } from "@react-three/drei";
 import { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import { DndProvider, useDrag, useDrop } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
+import { VisibilityMatrix, MeshTreeNode } from "./VisibilityMatrix";
 
 import configurator from "@/config/configurator.json";
 
@@ -71,6 +72,7 @@ export type Config = {
     title: string;
     description: string;
     groups: ConfiguratorGroup[];
+    visibility?: Record<string, boolean>;
   }>;
   closing: {
     kicker: string;
@@ -497,15 +499,6 @@ function EditableOptionRow({
             >
               {isEditing ? "Cancel" : "Delete"}
             </button>
-          {!isEditing && (
-            <button
-              type="button"
-              onClick={onOpenModel}
-              className="rounded-full border border-white/20 px-3 py-1 text-xs text-white hover:border-white/40"
-            >
-              Model
-            </button>
-          )}
         </div>
       </div>
     </div>
@@ -656,11 +649,7 @@ type DraggedChapter = {
   index: number;
 };
 
-type MeshTreeNode = {
-  name: string;
-  children: MeshTreeNode[];
-  isMesh: boolean;
-};
+// MeshTreeNode type is now imported from VisibilityMatrix
 
 function GltfSceneLoader({ url, onLoaded }: { url: string; onLoaded: (scene: Object3D) => void }) {
   const gltf = useGLTF(url);
@@ -1036,6 +1025,7 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
     groupId: string;
     optionValue: string;
   } | null>(null);
+  const [isMatrixOpen, setIsMatrixOpen] = useState(false);
   const sidebarModelUrl = useMemo(() => resolveModelUrl(sceneModel.src), [sceneModel.src]);
   const meshTree = useMemo(() => {
     const scene = gltfScene;
@@ -1390,6 +1380,48 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
     [focusTargetConfigs]
   );
 
+  const handleUpdateChapterVisibility = useCallback(
+    (chapterId: string, meshName: string, visible: boolean) => {
+      setChapters((prev) =>
+        prev.map((chapter) => {
+          if (chapter.id !== chapterId) return chapter;
+          const visibility = { ...(chapter.visibility ?? {}) };
+          if (visible) {
+            delete visibility[meshName]; // Remove explicit false if setting to true (default)
+          } else {
+            visibility[meshName] = false;
+          }
+          return { ...chapter, visibility };
+        })
+      );
+    },
+    []
+  );
+
+  const handleUpdateOptionVisibility = useCallback(
+    (
+      chapterId: string,
+      groupId: string,
+      optionValue: string,
+      meshName: string,
+      visible: boolean
+    ) => {
+      updateGroupOptions(chapterId, groupId, (options) =>
+        options.map((opt) => {
+          if (opt.value !== optionValue) return opt;
+          const visibility = { ...(opt.visibility ?? {}) };
+          if (visible) {
+            delete visibility[meshName]; // Remove explicit false if setting to true (default)
+          } else {
+            visibility[meshName] = false;
+          }
+          return { ...opt, visibility };
+        })
+      );
+    },
+    [updateGroupOptions]
+  );
+
   const priceBar = useMemo(
     () => (
       <div className="fixed bottom-4 left-1/2 z-40 w-full max-w-4xl -translate-x-1/2 px-4">
@@ -1492,20 +1524,35 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
   }, [activeChapterId, orderedChapters]);
 
   const objectVisibility = useMemo(() => {
-    const map: Record<string, boolean> = {};
+    const hiddenMeshes = new Set<string>();
+
+    // 1. Check Active Chapter
+    const activeChapter = orderedChapters.find((c) => c.id === activeChapterId);
+    if (activeChapter?.visibility) {
+      Object.entries(activeChapter.visibility).forEach(([mesh, visible]) => {
+        if (visible === false) hiddenMeshes.add(mesh);
+      });
+    }
+
+    // 2. Check Selected Options
     orderedChapters.forEach((chapter) => {
       chapter.groups.forEach((group) => {
         const selectedValue = selections[group.id];
         const option = group.options.find((opt) => opt.value === selectedValue);
         if (option?.visibility) {
           Object.entries(option.visibility).forEach(([meshName, state]) => {
-            map[meshName] = state;
+            if (state === false) hiddenMeshes.add(meshName);
           });
         }
       });
     });
+
+    const map: Record<string, boolean> = {};
+    hiddenMeshes.forEach((mesh) => {
+      map[mesh] = false;
+    });
     return map;
-  }, [orderedChapters, selections]);
+  }, [orderedChapters, selections, activeChapterId]);
 
   const content = (
     <div className="space-y-16 pb-28">
@@ -1645,8 +1692,15 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
       </section>
 
       <section className={mergedClasses.chaptersSection} aria-label="Configurator chapters">
-        <div className={`${mergedClasses.canvasWrapper} relative`}>
-          {isDesignMode && activeChapter && activeFocusKey && (
+        <div
+          className={`${
+            isMatrixOpen
+              ? "fixed inset-0 z-50 h-[100dvh] overflow-hidden bg-black"
+              : `${mergedClasses.canvasWrapper} relative`
+          } flex flex-col transition-all duration-500 ease-in-out`}
+        >
+          <div className="relative flex-1 min-h-0 w-full">
+            {isDesignMode && activeChapter && activeFocusKey && (
             <div className="absolute left-3 top-3 z-30 w-[300px] space-y-3 rounded-2xl border border-white/15 bg-slate-900/80 p-3 text-white shadow-2xl backdrop-blur">
               <div className="flex items-center justify-between text-xs uppercase tracking-[0.25em] text-white/60">
                 <span>Camera</span>
@@ -1656,23 +1710,36 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
               </div>
               <div className="flex flex-col gap-2 text-sm text-white/80">
                 {!orbitEnabled && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const snapshot =
-                        orbitCameraState ?? preOrbitCameraState ?? deriveCameraFromFocus(activeFocusKey);
-                      if (snapshot) {
-                        setOrbitCameraState(snapshot);
-                        setPreOrbitCameraState(snapshot);
-                      } else {
-                        setPreOrbitCameraState(null);
-                      }
-                      setOrbitEnabled(true);
-                    }}
-                    className="rounded-full bg-white/10 px-3 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-white hover:bg-white/20"
-                  >
-                    Change camera
-                  </button>
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const snapshot =
+                          orbitCameraState ?? preOrbitCameraState ?? deriveCameraFromFocus(activeFocusKey);
+                        if (snapshot) {
+                          setOrbitCameraState(snapshot);
+                          setPreOrbitCameraState(snapshot);
+                        } else {
+                          setPreOrbitCameraState(null);
+                        }
+                        setOrbitEnabled(true);
+                      }}
+                      className="rounded-full bg-white/10 px-3 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-white hover:bg-white/20"
+                    >
+                      Change camera
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setIsMatrixOpen(!isMatrixOpen)}
+                      className={`rounded-full border border-teal-300/60 px-3 py-2 text-xs font-semibold uppercase tracking-[0.2em] transition-colors ${
+                        isMatrixOpen
+                          ? "bg-teal-400 text-slate-900 border-teal-400"
+                          : "text-teal-200 hover:border-teal-300 hover:bg-teal-400/10"
+                      }`}
+                    >
+                      {isMatrixOpen ? "Close Model" : "Model"}
+                    </button>
+                  </>
                 )}
                 {orbitEnabled && (
                   <div className="space-y-2">
@@ -1747,6 +1814,15 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
             onOrbitCameraChange={setOrbitCameraState}
             orbitCameraState={orbitCameraState}
             resetToken={resetCameraToken}
+          />
+          </div>
+          <VisibilityMatrix
+            isOpen={isMatrixOpen}
+            onClose={() => setIsMatrixOpen(false)}
+            chapters={orderedChapters}
+            meshTree={meshTree}
+            onUpdateChapterVisibility={handleUpdateChapterVisibility}
+            onUpdateOptionVisibility={handleUpdateOptionVisibility}
           />
         </div>
         {orderedChapters.map((chapter) => (

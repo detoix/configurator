@@ -13,23 +13,194 @@
         "radius": 10,
         "polarDeg": 60,
         "azimuthDeg": 35,
-        "lookAt": [0, 0.6, 0]
+        "lookAt": [
+          0,
+          0.6,
+          0
+        ]
       },
       "detail": {
         "radius": 10,
         "polarDeg": 52,
         "azimuthDeg": -60,
-        "lookAt": [0, 0.8, 0]
+        "lookAt": [
+          0,
+          0.8,
+          0
+        ]
       }
     },
     "model": {
       "src": "/sci_fi_turret.glb",
-      "position": [0, 0, 0],
-      "rotationDeg": [0, 0, 0],
-      "scale": [0.02, 0.02, 0.02]
+      "position": [
+        0,
+        0,
+        0
+      ],
+      "rotationDeg": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        0.02,
+        0.02,
+        0.02
+      ]
     }
   },
   "chapters": [
+    {
+      "id": "dynamics",
+      "focus": "detail",
+      "kicker": "Chapter 03",
+      "title": "Systems & Weaponry",
+      "description": "Shift the camera to the weapon deck and actuator bays while you tune drive logic, recoil management, and assist layers.",
+      "visibility": {
+        "concept-shell": false
+      },
+      "groups": [
+        {
+          "id": "drive-mode",
+          "title": "Gun Type",
+          "helper": "Balance recoil vectoring, cooling cadence, and target priority.",
+          "options": [
+            {
+              "label": "Black",
+              "description": "Sentry posture, low aggression",
+              "value": "tour",
+              "visibility": {
+                "gun_type_A": true,
+                "gun_type_B": false
+              },
+              "price": 2617
+            },
+            {
+              "label": "Red",
+              "description": "Adaptive engagement logic",
+              "value": "vector",
+              "visibility": {
+                "gun_type_A": false,
+                "gun_type_B": true
+              },
+              "price": 2187
+            }
+          ]
+        },
+        {
+          "id": "steering-feel",
+          "title": "Traverse Feel",
+          "helper": "Set turret rotation resistance and micro-step precision.",
+          "options": [
+            {
+              "label": "Feather Glide",
+              "description": "Ultra-light pan for scouts",
+              "value": "feather",
+              "visibility": {
+                "accent-left": false,
+                "accent-right": true
+              },
+              "price": 2515
+            },
+            {
+              "label": "Balanced Lock",
+              "description": "Neutral torque profile",
+              "value": "balance",
+              "visibility": {
+                "accent-left": true,
+                "accent-right": true
+              },
+              "price": 2311
+            },
+            {
+              "label": "Carbon Grip",
+              "description": "High resistance, sniper bias",
+              "value": "carbon",
+              "visibility": {
+                "accent-left": true,
+                "accent-right": false,
+                "spoiler": true
+              },
+              "price": 3432
+            }
+          ]
+        },
+        {
+          "id": "suspension",
+          "title": "Mount Damping",
+          "helper": "Control elevation damping and platform stability.",
+          "options": [
+            {
+              "label": "Adaptive Mount",
+              "description": "Auto-level under recoil",
+              "value": "adaptive",
+              "visibility": {
+                "accent-left": false,
+                "accent-right": false
+              },
+              "price": 2631
+            },
+            {
+              "label": "Apex Mount",
+              "description": "Rigid stance for heavy barrages",
+              "value": "apex",
+              "visibility": {
+                "accent-left": true,
+                "accent-right": true
+              },
+              "price": 1365
+            },
+            {
+              "label": "Summit Mount",
+              "description": "Raised for uneven terrain",
+              "value": "summit",
+              "visibility": {
+                "accent-left": false,
+                "accent-right": true,
+                "spoiler": true
+              },
+              "price": 4369
+            }
+          ]
+        },
+        {
+          "id": "assist-suite",
+          "title": "Assist Suite",
+          "helper": "Blend autonomy layers with operator control.",
+          "options": [
+            {
+              "label": "Guardian AI",
+              "description": "HUD overlay and smart arcs",
+              "value": "guardian",
+              "visibility": {
+                "Cone": true
+              },
+              "price": 2424
+            },
+            {
+              "label": "Pilot AI",
+              "description": "Semi-autonomous tracking",
+              "value": "pilot",
+              "visibility": {
+                "Cone": false
+              },
+              "price": 2792
+            },
+            {
+              "label": "Manual",
+              "description": "Pure operator control",
+              "value": "off",
+              "visibility": {
+                "accent-left": false,
+                "accent-right": false,
+                "spoiler": false
+              },
+              "price": 1185
+            }
+          ]
+        }
+      ]
+    },
     {
       "id": "exterior",
       "focus": "overview",
@@ -46,21 +217,30 @@
               "label": "Cryo Alloy",
               "description": "Low-signature pearl titanium",
               "value": "glacier",
-              "visibility": { "xd": true, "Cube": false },
+              "visibility": {
+                "xd": true,
+                "Cube": false
+              },
               "price": 1824
             },
             {
               "label": "Obsidian Veil",
               "description": "Radar-damp matte basalt",
               "value": "obsidian",
-              "visibility": { "xd": true, "Cube": true },
+              "visibility": {
+                "xd": true,
+                "Cube": true
+              },
               "price": 4759
             },
             {
               "label": "Copperline",
               "description": "Reactive ember composite",
               "value": "copper",
-              "visibility": { "xd": false, "Cube": true },
+              "visibility": {
+                "xd": false,
+                "Cube": true
+              },
               "price": 4931
             },
             {
@@ -86,28 +266,40 @@
               "label": "Vortex Rails",
               "description": "Spun heat-vane profile",
               "value": "vortex",
-              "visibility": { "accent-left": true, "accent-right": true },
+              "visibility": {
+                "accent-left": true,
+                "accent-right": true
+              },
               "price": 940
             },
             {
               "label": "Segment Rails",
               "description": "Segmented armor slabs",
               "value": "segment",
-              "visibility": { "accent-left": false, "accent-right": false },
+              "visibility": {
+                "accent-left": false,
+                "accent-right": false
+              },
               "price": 959
             },
             {
               "label": "Ribbon Rails",
               "description": "Carbon lattice cooling",
               "value": "ribbon",
-              "visibility": { "accent-left": true, "accent-right": false },
+              "visibility": {
+                "accent-left": true,
+                "accent-right": false
+              },
               "price": 2987
             },
             {
               "label": "Halo Rails",
               "description": "Sealed dish aero skins",
               "value": "halo",
-              "visibility": { "accent-left": false, "accent-right": true },
+              "visibility": {
+                "accent-left": false,
+                "accent-right": true
+              },
               "price": 4123
             }
           ]
@@ -121,14 +313,18 @@
               "label": "Panorama Hood",
               "description": "Electrochromic viewport",
               "value": "panorama",
-              "visibility": { "spoiler": false },
+              "visibility": {
+                "spoiler": false
+              },
               "price": 3319
             },
             {
               "label": "Contour Hood",
               "description": "Armored ridge with vents",
               "value": "contour",
-              "visibility": { "spoiler": true },
+              "visibility": {
+                "spoiler": true
+              },
               "price": 4467
             },
             {
@@ -153,21 +349,30 @@
               "label": "Pulse Beacon",
               "description": "Sequential threat sweep",
               "value": "pulse",
-              "visibility": { "accent-left": true, "accent-right": true },
+              "visibility": {
+                "accent-left": true,
+                "accent-right": true
+              },
               "price": 4775
             },
             {
               "label": "Compass Beacon",
               "description": "Cross-axis nav beams",
               "value": "compass",
-              "visibility": { "accent-left": true, "accent-right": false },
+              "visibility": {
+                "accent-left": true,
+                "accent-right": false
+              },
               "price": 1648
             },
             {
               "label": "Crescent Beacon",
               "description": "Arc-pattern status glow",
               "value": "crescent",
-              "visibility": { "accent-left": false, "accent-right": true },
+              "visibility": {
+                "accent-left": false,
+                "accent-right": true
+              },
               "price": 655
             }
           ]
@@ -181,14 +386,20 @@
               "label": "Chrome Crest",
               "description": "High-polish command emblem",
               "value": "chrome",
-              "visibility": { "accent-left": false, "accent-right": false },
+              "visibility": {
+                "accent-left": false,
+                "accent-right": false
+              },
               "price": 2242
             },
             {
               "label": "Shadow Crest",
               "description": "Smoked alloy sigil",
               "value": "shadow",
-              "visibility": { "accent-left": true, "accent-right": true },
+              "visibility": {
+                "accent-left": true,
+                "accent-right": true
+              },
               "price": 1204
             },
             {
@@ -201,147 +412,6 @@
                 "spoiler": true
               },
               "price": 4584
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "id": "dynamics",
-      "focus": "detail",
-      "kicker": "Chapter 03",
-      "title": "Systems & Weaponry",
-      "description": "Shift the camera to the weapon deck and actuator bays while you tune drive logic, recoil management, and assist layers.",
-      "groups": [
-        {
-          "id": "drive-mode",
-          "title": "Fire Control Mode",
-          "helper": "Balance recoil vectoring, cooling cadence, and target priority.",
-          "options": [
-            {
-              "label": "Guardian",
-              "description": "Sentry posture, low aggression",
-              "value": "tour",
-              "visibility": {
-                "accent-left": false,
-                "accent-right": false,
-                "spoiler": false
-              },
-              "price": 2617
-            },
-            {
-              "label": "Vector",
-              "description": "Adaptive engagement logic",
-              "value": "vector",
-              "visibility": { "accent-left": true, "accent-right": true },
-              "price": 2187
-            },
-            {
-              "label": "Pulse Strike",
-              "description": "High-cycle, tracked burst",
-              "value": "pulse-mode",
-              "visibility": {
-                "accent-left": true,
-                "accent-right": false,
-                "spoiler": true
-              },
-              "price": 1837
-            }
-          ]
-        },
-        {
-          "id": "steering-feel",
-          "title": "Traverse Feel",
-          "helper": "Set turret rotation resistance and micro-step precision.",
-          "options": [
-            {
-              "label": "Feather Glide",
-              "description": "Ultra-light pan for scouts",
-              "value": "feather",
-              "visibility": { "accent-left": false, "accent-right": true },
-              "price": 2515
-            },
-            {
-              "label": "Balanced Lock",
-              "description": "Neutral torque profile",
-              "value": "balance",
-              "visibility": { "accent-left": true, "accent-right": true },
-              "price": 2311
-            },
-            {
-              "label": "Carbon Grip",
-              "description": "High resistance, sniper bias",
-              "value": "carbon",
-              "visibility": {
-                "accent-left": true,
-                "accent-right": false,
-                "spoiler": true
-              },
-              "price": 3432
-            }
-          ]
-        },
-        {
-          "id": "suspension",
-          "title": "Mount Damping",
-          "helper": "Control elevation damping and platform stability.",
-          "options": [
-            {
-              "label": "Adaptive Mount",
-              "description": "Auto-level under recoil",
-              "value": "adaptive",
-              "visibility": { "accent-left": false, "accent-right": false },
-              "price": 2631
-            },
-            {
-              "label": "Apex Mount",
-              "description": "Rigid stance for heavy barrages",
-              "value": "apex",
-              "visibility": { "accent-left": true, "accent-right": true },
-              "price": 1365
-            },
-            {
-              "label": "Summit Mount",
-              "description": "Raised for uneven terrain",
-              "value": "summit",
-              "visibility": {
-                "accent-left": false,
-                "accent-right": true,
-                "spoiler": true
-              },
-              "price": 4369
-            }
-          ]
-        },
-        {
-          "id": "assist-suite",
-          "title": "Assist Suite",
-          "helper": "Blend autonomy layers with operator control.",
-          "options": [
-            {
-              "label": "Guardian AI",
-              "description": "HUD overlay and smart arcs",
-              "value": "guardian",
-              "visibility": { "Cone": true },
-              "price": 2424
-            },
-            {
-              "label": "Pilot AI",
-              "description": "Semi-autonomous tracking",
-              "value": "pilot",
-              "visibility": { "Cone": false },
-              "price": 2792
-            },
-            {
-              "label": "Manual",
-              "description": "Pure operator control",
-              "value": "off",
-              "visibility": {
-                "accent-left": false,
-                "accent-right": false,
-                "spoiler": false
-              },
-              "price": 1185
             }
           ]
         }
