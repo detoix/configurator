@@ -606,8 +606,8 @@ function ConfiguratorCanvas({
   if (!gltfScene) return null;
   return (
     <Canvas shadows camera={{ position: [4, 3, 6], fov: 50 }}>
-      <color attach="background" args={["#020617"]} />
-      <ambientLight intensity={0.4} />
+      <color attach="background" args={["#0f172a"]} />
+      <ambientLight intensity={0.7} />
       <directionalLight
         position={[5, 10, 5]}
         castShadow
@@ -1026,6 +1026,13 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
     optionValue: string;
   } | null>(null);
   const [isMatrixOpen, setIsMatrixOpen] = useState(false);
+  const matrixActive = isMatrixOpen && isDesignMode;
+  const handleModeChange = useCallback((nextMode: "design" | "preview") => {
+    setMode(nextMode);
+    if (nextMode === "preview") {
+      setIsMatrixOpen(false);
+    }
+  }, []);
   const sidebarModelUrl = useMemo(() => resolveModelUrl(sceneModel.src), [sceneModel.src]);
   const meshTree = useMemo(() => {
     const scene = gltfScene;
@@ -1523,6 +1530,16 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
     };
   }, [activeChapterId, orderedChapters]);
 
+  useEffect(() => {
+    if (!isClient) return;
+    if (!matrixActive) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [isClient, matrixActive]);
+
   const objectVisibility = useMemo(() => {
     const hiddenMeshes = new Set<string>();
 
@@ -1561,7 +1578,7 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
           <div className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/5 p-1 text-xs uppercase tracking-[0.3em] text-white/60 shadow-2xl">
             <button
               type="button"
-              onClick={() => setMode("design")}
+              onClick={() => handleModeChange("design")}
               className={`rounded-full px-4 py-2 transition ${
                 isDesignMode ? "bg-white text-slate-900 shadow-lg" : "hover:bg-white/10"
               }`}
@@ -1570,7 +1587,7 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
             </button>
             <button
               type="button"
-              onClick={() => setMode("preview")}
+              onClick={() => handleModeChange("preview")}
               className={`rounded-full px-4 py-2 transition ${
                 !isDesignMode ? "bg-white text-slate-900 shadow-lg" : "hover:bg-white/10"
               }`}
@@ -1693,11 +1710,9 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
 
       <section className={mergedClasses.chaptersSection} aria-label="Configurator chapters">
         <div
-          className={`${
-            isMatrixOpen
-              ? "fixed inset-0 z-50 h-[100dvh] overflow-hidden bg-black"
-              : `${mergedClasses.canvasWrapper} relative`
-          } flex flex-col transition-all duration-500 ease-in-out`}
+          className={`${mergedClasses.canvasWrapper} relative flex flex-col transition-all duration-500 ease-in-out ${
+            matrixActive ? "pointer-events-none opacity-0" : ""
+          }`}
         >
           <div className="relative flex-1 min-h-0 w-full">
             {isDesignMode && activeChapter && activeFocusKey && (
@@ -1730,7 +1745,7 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
                     </button>
                     <button
                       type="button"
-                      onClick={() => setIsMatrixOpen(!isMatrixOpen)}
+                      onClick={() => setIsMatrixOpen((prev) => !prev)}
                       className={`rounded-full border border-teal-300/60 px-3 py-2 text-xs font-semibold uppercase tracking-[0.2em] transition-colors ${
                         isMatrixOpen
                           ? "bg-teal-400 text-slate-900 border-teal-400"
@@ -1816,15 +1831,136 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
             resetToken={resetCameraToken}
           />
           </div>
-          <VisibilityMatrix
-            isOpen={isMatrixOpen}
-            onClose={() => setIsMatrixOpen(false)}
-            chapters={orderedChapters}
-            meshTree={meshTree}
-            onUpdateChapterVisibility={handleUpdateChapterVisibility}
-            onUpdateOptionVisibility={handleUpdateOptionVisibility}
-          />
         </div>
+        {matrixActive && (
+          <div className="fixed inset-0 z-50 flex h-[100dvh] flex-col overflow-hidden bg-black">
+            <div className="relative flex-1 min-h-0 w-full">
+              {isDesignMode && activeChapter && activeFocusKey && (
+              <div className="absolute left-3 top-3 z-30 w-[300px] space-y-3 rounded-2xl border border-white/15 bg-slate-900/80 p-3 text-white shadow-2xl backdrop-blur">
+                <div className="flex items-center justify-between text-xs uppercase tracking-[0.25em] text-white/60">
+                  <span>Camera</span>
+                  <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] text-teal-100">
+                    {activeFocusKey}
+                  </span>
+                </div>
+                <div className="flex flex-col gap-2 text-sm text-white/80">
+                  {!orbitEnabled && (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const snapshot =
+                            orbitCameraState ?? preOrbitCameraState ?? deriveCameraFromFocus(activeFocusKey);
+                          if (snapshot) {
+                            setOrbitCameraState(snapshot);
+                            setPreOrbitCameraState(snapshot);
+                          } else {
+                            setPreOrbitCameraState(null);
+                          }
+                          setOrbitEnabled(true);
+                        }}
+                        className="rounded-full bg-white/10 px-3 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-white hover:bg-white/20"
+                      >
+                        Change camera
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setIsMatrixOpen((prev) => !prev)}
+                        className={`rounded-full border border-teal-300/60 px-3 py-2 text-xs font-semibold uppercase tracking-[0.2em] transition-colors ${
+                          isMatrixOpen
+                            ? "bg-teal-400 text-slate-900 border-teal-400"
+                            : "text-teal-200 hover:border-teal-300 hover:bg-teal-400/10"
+                        }`}
+                      >
+                        {isMatrixOpen ? "Close Model" : "Model"}
+                      </button>
+                    </>
+                  )}
+                  {orbitEnabled && (
+                    <div className="space-y-2">
+                      <p className="text-[11px] text-white/60">Use orbit to frame the shot.</p>
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const snapshot =
+                              preOrbitCameraState ?? deriveCameraFromFocus(activeFocusKey) ?? orbitCameraState;
+                            setOrbitCameraState(snapshot);
+                            setOrbitEnabled(false);
+                            setResetCameraToken((t) => t + 1);
+                          }}
+                          className="flex-1 rounded-full border border-white/20 bg-white/10 px-3 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-white hover:border-teal-300 hover:text-teal-100"
+                        >
+                          Reset
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleKeepCurrentView}
+                          disabled={!orbitCameraState}
+                          className={`flex-1 rounded-full px-3 py-2 text-xs font-semibold uppercase tracking-[0.2em] shadow ${
+                            orbitCameraState
+                              ? "bg-teal-400 text-slate-900 hover:bg-teal-300"
+                              : "bg-white/10 text-white/60"
+                          }`}
+                        >
+                          Keep this view
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+                <p className="text-[11px] text-white/50">
+                  Stored for <span className="font-semibold text-white">{activeChapter.title}</span>.
+                </p>
+              </div>
+            )}
+            {isDesignMode && (
+              <div className="absolute right-3 top-3 z-30 flex gap-2">
+                <button
+                  type="button"
+                  onClick={handleUploadModelClick}
+                  className="rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-white shadow hover:border-teal-300 hover:text-teal-100"
+                >
+                  Upload model
+                </button>
+                <button
+                  type="button"
+                  onClick={handleReplaceModel}
+                  className="rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-white shadow hover:border-teal-300 hover:text-teal-100"
+                >
+                  Use URL
+                </button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".glb,.gltf,model/gltf-binary,model/gltf+json"
+                  className="hidden"
+                  onChange={handleFileInput}
+                />
+              </div>
+            )}
+            <ConfiguratorCanvas
+              focus={focus}
+              modelConfig={sceneModel}
+              visibility={objectVisibility}
+              focusTargets={focusTargets}
+              gltfScene={gltfScene}
+              orbitEnabled={orbitEnabled}
+              onOrbitCameraChange={setOrbitCameraState}
+              orbitCameraState={orbitCameraState}
+              resetToken={resetCameraToken}
+            />
+            </div>
+            <VisibilityMatrix
+              isOpen={matrixActive}
+              onClose={() => setIsMatrixOpen(false)}
+              chapters={orderedChapters}
+              meshTree={meshTree}
+              onUpdateChapterVisibility={handleUpdateChapterVisibility}
+              onUpdateOptionVisibility={handleUpdateOptionVisibility}
+            />
+          </div>
+        )}
         {orderedChapters.map((chapter) => (
           <div
             key={chapter.id}
@@ -2091,7 +2227,7 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
                 onAddChapter={addChapter}
                 onDeleteChapter={deleteChapter}
                 mode={mode}
-                onModeChange={setMode}
+                onModeChange={handleModeChange}
                 meshTree={meshTree}
                 optionModelTarget={optionModelTarget?.optionValue ?? null}
                 onCloseModel={() => setOptionModelTarget(null)}
