@@ -2025,7 +2025,15 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
 
   return (
     <DndProvider backend={HTML5Backend}>
-      <div className={mergedClasses.root}>
+      <div
+        className={mergedClasses.root}
+        style={{
+          backgroundImage: "url('/shape-9.87b97093.webp')",
+          backgroundPosition: "center",
+          backgroundRepeat: "no-repeat",
+          backgroundSize: "cover",
+        }}
+      >
         {isClient && gltfScene === null && (
           <GltfSceneLoader url={sidebarModelUrl} onLoaded={(scene) => setGltfScene(scene)} />
         )}

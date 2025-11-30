@@ -52,35 +52,39 @@ export default function DropPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-slate-950 px-4 py-10 text-white">
-      <div className="mx-auto flex max-w-3xl flex-col gap-6 rounded-sm border border-white/10 bg-slate-900/80 p-6 text-center shadow-2xl backdrop-blur">
-        <p className="text-xs uppercase tracking-[0.4em] text-teal-200">Drop GLB</p>
-        <h1 className="text-3xl font-semibold">Design starts with a drop</h1>
-        <p className="text-sm text-white/70">
-          Drop your `.glb` file below to jump directly into the configurator. We will open the design
-          experience as soon as the upload completes.
-        </p>
-        <div
-          onDrop={handleDrop}
-          onDragOver={handleDragOver}
-          onDragEnter={handleDragEnter}
-          onDragLeave={handleDragLeave}
-          className={`flex min-h-[240px] flex-col items-center justify-center rounded-sm border-2 border-dashed px-6 py-10 text-sm transition ${
-            isDragging
-              ? "border-teal-400 bg-white/5 text-teal-200"
-              : "border-white/30 bg-transparent text-white/60"
-          }`}
-        >
-          <p className="text-lg font-semibold">
-            {isDragging ? "Release to open designer" : "Drop your .glb file here"}
+    <div
+      className="min-h-screen bg-[#e9e9e9] text-white"
+      style={{
+        backgroundImage: "url('/shape-9.87b97093.webp')",
+        backgroundPosition: "center",
+        backgroundRepeat: "no-repeat",
+        backgroundSize: "cover",
+      }}
+    >
+      <div className="mx-auto flex max-w-6xl flex-col gap-10 px-6 py-16">
+        <div className="space-y-4 text-lg leading-relaxed text-slate-700">
+          <h1 className="text-4xl font-semibold text-[#111111] sm:text-5xl">Design starts with a drop</h1>
+          <p className="text-base text-[#111111]/70">
+            Drop a `.glb` file into the field below and we’ll immediately surface the configurator while preserving
+            the exact palette and boundary treatments you rely on in the rest of the UI.
           </p>
-          <p className="text-xs uppercase tracking-[0.3em] text-white/40">only .glb supported</p>
         </div>
-        {error && <p className="text-xs text-red-300">{error}</p>}
-        <div className="text-xs uppercase tracking-[0.3em] text-white/40">
-          Need to preview without uploading? <button type="button" className="font-semibold text-white" onClick={() => router.push("/")}>Open default design</button>
+          <div
+            onDrop={handleDrop}
+            onDragOver={handleDragOver}
+            onDragEnter={handleDragEnter}
+            onDragLeave={handleDragLeave}
+            className={`flex min-h-[260px] flex-col items-center justify-center gap-3 rounded-sm border border-[#999999] bg-[#e9e9e9] px-8 py-8 text-center text-sm text-[#111111] transition ${
+              isDragging ? "border-[#ff6a3a] bg-white text-[#111111]" : ""
+            }`}
+          >
+            <p className="text-xl font-semibold text-[#111111]">
+              {isDragging ? "Release to open designer" : "Drop your .glb file here"}
+            </p>
+            <p className="text-[11px] uppercase tracking-[0.4em] text-[#111111]/60">.glb only</p>
+          </div>
+          {error && <p className="mt-4 text-xs text-red-300">{error}</p>}
         </div>
-      </div>
     </div>
   );
 }
