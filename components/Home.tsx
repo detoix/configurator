@@ -111,24 +111,24 @@ export type HomeProps = {
 const defaultConfig = configurator as unknown as Config;
 
 const defaultClasses: HomeClassNames = {
-  root: "bg-slate-950 text-white",
+  root: "bg-[#e9e9e9] text-[#111111]",
   main: "mx-auto flex max-w-6xl flex-col gap-24 px-6 py-16",
   heroSection: "space-y-10 text-lg leading-relaxed text-slate-200",
-  heroKicker: "text-sm uppercase tracking-[0.5em] text-teal-200",
-  heroTitle: "text-4xl font-semibold text-white sm:text-6xl",
-  heroParagraph: "text-base text-white/70",
+  heroKicker: "text-sm uppercase tracking-[0.5em] text-[#ff6a3a]",
+  heroTitle: "text-4xl font-semibold text-[#111111] sm:text-6xl",
+  heroParagraph: "text-base text-[#111111]/70",
   chaptersSection: "space-y-16",
   canvasWrapper:
-    "sticky top-0 z-20 h-[33vh] min-h-[280px] max-h-[70vh] w-screen max-w-none overflow-hidden rounded-sm bg-black shadow-2xl sm:mx-0 sm:w-full sm:rounded-sm md:static md:top-auto md:h-full md:min-h-0 md:max-h-none md:w-full md:rounded-sm",
+    "sticky top-0 z-20 h-[33vh] min-h-[280px] max-h-[70vh] w-screen max-w-none overflow-hidden rounded-sm shadow-2xl sm:mx-0 sm:w-full sm:rounded-sm md:static md:top-auto md:h-full md:min-h-0 md:max-h-none md:w-full md:rounded-sm",
   chapterContainer: "space-y-8",
   chapterHeader: "space-y-3",
-  chapterKicker: "text-sm uppercase tracking-[0.4em] text-teal-200",
+  chapterKicker: "text-sm uppercase tracking-[0.4em] text-[#ff6a3a]",
   chapterTitle: "text-3xl font-semibold",
-  chapterDescription: "text-base text-white/70",
+  chapterDescription: "text-base text-[#111111]/70",
   groupWrapper: "space-y-6",
   closingSection: "space-y-8 pb-24 text-lg leading-relaxed text-slate-200",
-  closingKicker: "text-sm uppercase tracking-[0.4em] text-teal-200",
-  closingTitle: "text-3xl font-semibold text-white",
+  closingKicker: "text-sm uppercase tracking-[0.4em] text-[#ff6a3a]",
+  closingTitle: "text-3xl font-semibold text-[#111111]",
   closingParagraph: "",
 };
 
@@ -348,10 +348,10 @@ function ConfigRadioGroup({ title, helper, options, value, onChange }: ConfigRad
 
   return (
     <fieldset className="rounded-sm border border-white/10 bg-white/5 p-6 backdrop-blur">
-      <legend className="text-base font-semibold uppercase tracking-[0.3em] text-white/70">
+      <legend className="text-base font-semibold uppercase tracking-[0.3em] text-[#111111]/70">
         {title}
       </legend>
-      <p className="mt-2 text-sm text-white/70">{helper}</p>
+      <p className="mt-2 text-sm text-[#111111]/70">{helper}</p>
       <div className="mt-5 grid gap-3 md:grid-cols-2">
         {options.map((option) => {
           const id = `${name}-${option.value}`;
@@ -361,8 +361,8 @@ function ConfigRadioGroup({ title, helper, options, value, onChange }: ConfigRad
               htmlFor={id}
               className={`flex cursor-pointer flex-col gap-1 rounded-sm border px-4 py-3 ${
                 value === option.value
-                  ? "border-teal-400 bg-teal-400/10 text-white"
-                  : "border-white/10 text-white/80"
+                  ? "border-teal-400 bg-[#ff6a3a]/10 text-[#111111]"
+                  : "border-white/10 text-[#111111]/80"
               }`}
             >
               <input
@@ -377,8 +377,8 @@ function ConfigRadioGroup({ title, helper, options, value, onChange }: ConfigRad
               <span className="text-sm font-semibold uppercase tracking-widest">
                 {option.label}
               </span>
-              <span className="text-xs text-white/70">{option.description}</span>
-              <span className="text-xs font-semibold text-teal-200">
+              <span className="text-xs text-[#111111]/70">{option.description}</span>
+              <span className="text-xs font-semibold text-[#ff6a3a]">
                 {currency.format(option.price ?? 0)}
               </span>
             </label>
@@ -425,8 +425,8 @@ function EditableOptionRow({
 
   const cardClass =
     checked
-      ? "border-teal-400 bg-teal-400/10 text-white"
-      : "border-white/10 bg-white/5 text-white/80 hover:border-white/20";
+      ? "border-teal-400 bg-[#ff6a3a]/10 text-[#111111]"
+      : "border-white/10 bg-white/5 text-[#111111]/80 hover:border-white/20";
 
   return (
     <div className={`flex flex-col gap-3 rounded-sm border px-4 py-3 transition ${cardClass}`}>
@@ -442,7 +442,7 @@ function EditableOptionRow({
           {isEditing ? (
             <div className="flex-1 space-y-2">
               <input
-                className="w-full rounded-sm border border-white/10 bg-slate-900/70 px-3 py-2 text-sm text-white"
+                className="w-full rounded-sm border border-white/10 bg-[#e9e9e9] px-3 py-2 text-sm text-[#111111]"
                 value={draft.label}
                 onChange={(e: ChangeEvent<HTMLInputElement>) =>
                   setDraft((prev) => ({ ...prev, label: e.target.value }))
@@ -450,7 +450,7 @@ function EditableOptionRow({
                 placeholder="Label"
               />
               <input
-                className="w-full rounded-sm border border-white/10 bg-slate-900/70 px-3 py-2 text-sm text-white"
+                className="w-full rounded-sm border border-white/10 bg-[#e9e9e9] px-3 py-2 text-sm text-[#111111]"
                 value={draft.description}
                 onChange={(e: ChangeEvent<HTMLInputElement>) =>
                   setDraft((prev) => ({ ...prev, description: e.target.value }))
@@ -459,7 +459,7 @@ function EditableOptionRow({
               />
               <input
                 type="number"
-                className="w-full rounded-sm border border-white/10 bg-slate-900/70 px-3 py-2 text-sm text-white"
+                className="w-full rounded-sm border border-white/10 bg-[#e9e9e9] px-3 py-2 text-sm text-[#111111]"
                 value={draft.price}
                 onChange={(e: ChangeEvent<HTMLInputElement>) =>
                   setDraft((prev) => ({ ...prev, price: parseFloat(e.target.value) || 0 }))
@@ -469,9 +469,9 @@ function EditableOptionRow({
             </div>
           ) : (
             <div>
-              <p className="text-sm font-semibold uppercase tracking-wide text-white">{option.label}</p>
-              <p className="text-xs text-white/70">{option.description}</p>
-              <p className="text-xs font-semibold text-teal-200">{currency.format(option.price ?? 0)}</p>
+              <p className="text-sm font-semibold uppercase tracking-wide text-[#111111]">{option.label}</p>
+              <p className="text-xs text-[#111111]/70">{option.description}</p>
+              <p className="text-xs font-semibold text-[#ff6a3a]">{currency.format(option.price ?? 0)}</p>
             </div>
           )}
         </label>
@@ -480,7 +480,7 @@ function EditableOptionRow({
             <button
               type="button"
               onClick={handleSave}
-              className="rounded-sm bg-teal-400 px-3 py-1 text-xs font-semibold text-slate-900"
+              className="rounded-sm bg-[#ff6a3a] px-3 py-1 text-xs font-semibold text-slate-900"
             >
               Save
             </button>
@@ -488,7 +488,7 @@ function EditableOptionRow({
             <button
               type="button"
               onClick={() => setIsEditing(true)}
-              className="rounded-sm border border-white/20 px-3 py-1 text-xs text-white hover:border-white/40"
+              className="rounded-sm border border-white/20 px-3 py-1 text-xs text-[#111111] hover:border-white/40"
             >
               Edit
             </button>
@@ -496,7 +496,7 @@ function EditableOptionRow({
           <button
             type="button"
             onClick={isEditing ? () => setIsEditing(false) : onDelete}
-            className="rounded-sm border border-white/20 px-3 py-1 text-xs text-white hover:border-white/40"
+            className="rounded-sm border border-white/20 px-3 py-1 text-xs text-[#111111] hover:border-white/40"
             >
               {isEditing ? "Cancel" : "Delete"}
             </button>
@@ -531,15 +531,15 @@ function EditableConfigGroup({
     <fieldset className="rounded-sm border border-white/10 bg-white/5 p-6 backdrop-blur">
       <div className="flex items-center justify-between">
         <div>
-          <legend className="text-base font-semibold uppercase tracking-[0.3em] text-white/70">
+          <legend className="text-base font-semibold uppercase tracking-[0.3em] text-[#111111]/70">
             {group.title}
           </legend>
-          <p className="mt-2 text-sm text-white/70">{group.helper}</p>
+          <p className="mt-2 text-sm text-[#111111]/70">{group.helper}</p>
         </div>
         <button
           type="button"
           onClick={onAdd}
-          className="rounded-sm border border-teal-300/60 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-teal-200 hover:border-teal-300"
+          className="rounded-sm border border-teal-300/60 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-[#ff6a3a] hover:border-teal-300"
         >
           Add
         </button>
@@ -607,7 +607,7 @@ function ConfiguratorCanvas({
   if (!gltfScene) return null;
   return (
     <Canvas shadows camera={{ position: [4, 3, 6], fov: 50 }}>
-      <color attach="background" args={["#0f172a"]} />
+      <color attach="background" args={["#e9e9e9"]} />
       <ambientLight intensity={0.7} />
       <directionalLight
         position={[5, 10, 5]}
@@ -645,13 +645,6 @@ function ConfiguratorCanvas({
   );
 }
 
-type DraggedChapter = {
-  id: string;
-  index: number;
-};
-
-// MeshTreeNode type is now imported from VisibilityMatrix
-
 function GltfSceneLoader({ url, onLoaded }: { url: string; onLoaded: (scene: Object3D) => void }) {
   const gltf = useGLTF(url);
 
@@ -664,49 +657,6 @@ function GltfSceneLoader({ url, onLoaded }: { url: string; onLoaded: (scene: Obj
   }, [url]);
 
   return null;
-}
-
-function MeshTreeNodeView({
-  node,
-  visibility,
-  onToggle,
-}: {
-  node: MeshTreeNode;
-  visibility: Record<string, boolean | undefined>;
-  onToggle: (meshName: string) => void;
-}) {
-  const checked = visibility[node.name] !== false;
-  const hasChildren = node.children.length > 0;
-  return (
-    <div className="space-y-1 rounded-sm border border-white/5 bg-white/5 p-2">
-      {node.isMesh && (
-        <label className="flex items-center gap-2 text-sm">
-          <input
-            type="checkbox"
-            checked={checked}
-            onChange={() => onToggle(node.name)}
-            className="h-4 w-4 accent-teal-300"
-          />
-          <span className="text-white">{node.name}</span>
-        </label>
-      )}
-      {!node.isMesh && node.name && (
-        <p className="text-xs uppercase tracking-[0.2em] text-white/50">{node.name}</p>
-      )}
-      {!node.isMesh && hasChildren && (
-        <div className="space-y-1 pl-3">
-          {node.children.map((child, index) => (
-            <MeshTreeNodeView
-              key={`${child.name}-${index}`}
-              node={child}
-              visibility={visibility}
-              onToggle={onToggle}
-            />
-          ))}
-        </div>
-      )}
-    </div>
-  );
 }
 
 function buildMeshTree(node: Object3D, counter: { current: number }): MeshTreeNode | null {
@@ -731,125 +681,6 @@ function buildMeshTree(node: Object3D, counter: { current: number }): MeshTreeNo
     children,
     isMesh,
   };
-}
-
-function DraggableChapterItem({
-  chapter,
-  index,
-  totalCount,
-  moveChapter,
-  onDelete,
-  active,
-  onSelect,
-}: {
-  chapter: Config["chapters"][number];
-  index: number;
-  totalCount: number;
-  moveChapter: (from: number, to: number) => void;
-  onDelete: (id: string) => void;
-  active: boolean;
-  onSelect: () => void;
-}) {
-  const ref = useRef<HTMLDivElement | null>(null);
-
-  const [, drop] = useDrop<DraggedChapter>({
-    accept: ItemTypes.CHAPTER,
-    hover(item, monitor) {
-      if (!ref.current) return;
-      const dragIndex = item.index;
-      const hoverIndex = index;
-      if (dragIndex === hoverIndex) return;
-
-      const hoverBoundingRect = ref.current.getBoundingClientRect();
-      const hoverMiddleY = (hoverBoundingRect.bottom - hoverBoundingRect.top) / 2;
-      const clientOffset = monitor.getClientOffset();
-      if (!clientOffset) return;
-      const hoverClientY = clientOffset.y - hoverBoundingRect.top;
-
-      if (dragIndex < hoverIndex && hoverClientY < hoverMiddleY) return;
-      if (dragIndex > hoverIndex && hoverClientY > hoverMiddleY) return;
-
-      moveChapter(dragIndex, hoverIndex);
-      item.index = hoverIndex;
-    },
-  });
-
-  const [{ isDragging }, drag] = useDrag({
-    type: ItemTypes.CHAPTER,
-    item: { id: chapter.id, index },
-    collect: (monitor) => ({
-      isDragging: monitor.isDragging(),
-    }),
-  });
-
-  useEffect(() => {
-    if (!ref.current) return;
-    const node = ref.current;
-    drag(drop(node));
-  }, [drag, drop]);
-
-  const cardClass = active
-    ? "border-teal-400 bg-teal-400/15 text-white"
-    : "border-white/10 bg-white/5 text-white/80 hover:border-white/20";
-
-  return (
-    <div
-      ref={ref}
-      onClick={onSelect}
-      className={`flex cursor-move items-center justify-between rounded-sm border px-3 py-2 text-sm shadow-sm transition ${cardClass}`}
-      style={{ opacity: isDragging ? 0.5 : 1 }}
-    >
-      <span className="flex items-center gap-2">
-        <span className="h-1.5 w-1.5 rounded-sm bg-teal-300" aria-hidden />
-        {chapter.title}
-      </span>
-      <div className="flex items-center gap-2">
-        {active && (
-          <div className="flex gap-1 mr-2">
-            <button
-              type="button"
-              disabled={index === 0}
-              onClick={(e) => {
-                e.stopPropagation();
-                moveChapter(index, index - 1);
-              }}
-              className="rounded p-1 hover:bg-white/10 disabled:opacity-30"
-              title="Move Up"
-            >
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                <path d="M12 19V5M5 12l7-7 7 7" />
-              </svg>
-            </button>
-            <button
-              type="button"
-              disabled={index === totalCount - 1}
-              onClick={(e) => {
-                e.stopPropagation();
-                moveChapter(index, index + 1);
-              }}
-              className="rounded p-1 hover:bg-white/10 disabled:opacity-30"
-              title="Move Down"
-            >
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                <path d="M12 5v14M5 12l7 7 7-7" />
-              </svg>
-            </button>
-          </div>
-        )}
-        <span className="text-xs uppercase tracking-[0.2em] text-white/40">{chapter.kicker}</span>
-        <button
-          type="button"
-          onClick={(e: MouseEvent<HTMLButtonElement>) => {
-            e.stopPropagation();
-            onDelete(chapter.id);
-          }}
-          className="rounded-sm border border-white/20 px-2 py-1 text-[10px] uppercase tracking-[0.2em] text-white hover:border-red-300 hover:text-red-200"
-        >
-          Delete
-        </button>
-      </div>
-    </div>
-  );
 }
 
 function ChaptersList({
@@ -913,7 +744,7 @@ function ChaptersList({
           className={`${
             true
               ? mergedClasses.chapterContainer
-              : "space-y-3 rounded-sm border border-white/10 bg-slate-900/60 p-4"
+              : "space-y-3 rounded-sm border border-white/10 bg-[#e9e9e9] p-4"
           } relative`}
           aria-label={`${chapter.title} configuration focus`}
         >
@@ -924,7 +755,7 @@ function ChaptersList({
                   {editingChapters[chapter.id] ? (
                     <>
                       <input
-                        className="w-full rounded-sm border border-white/10 bg-slate-900/70 px-3 py-2 text-sm text-white"
+                        className="w-full rounded-sm border border-white/10 bg-[#e9e9e9] px-3 py-2 text-sm text-[#111111]"
                         value={(chapterDrafts[chapter.id]?.kicker as string | undefined) ?? chapter.kicker}
                         onChange={(e: ChangeEvent<HTMLInputElement>) =>
                           updateChapterDraft(chapter.id, "kicker", e.target.value)
@@ -932,7 +763,7 @@ function ChaptersList({
                         placeholder="Kicker"
                       />
                       <input
-                        className="w-full rounded-sm border border-white/10 bg-slate-900/70 px-3 py-2 text-lg font-semibold text-white"
+                        className="w-full rounded-sm border border-white/10 bg-[#e9e9e9] px-3 py-2 text-lg font-semibold text-[#111111]"
                         value={(chapterDrafts[chapter.id]?.title as string | undefined) ?? chapter.title}
                         onChange={(e: ChangeEvent<HTMLInputElement>) =>
                           updateChapterDraft(chapter.id, "title", e.target.value)
@@ -940,7 +771,7 @@ function ChaptersList({
                         placeholder="Title"
                       />
                       <textarea
-                        className="w-full rounded-sm border border-white/10 bg-slate-900/70 px-3 py-2 text-sm text-white"
+                        className="w-full rounded-sm border border-white/10 bg-[#e9e9e9] px-3 py-2 text-sm text-[#111111]"
                         value={
                           (chapterDrafts[chapter.id]?.description as string | undefined) ?? chapter.description
                         }
@@ -969,7 +800,7 @@ function ChaptersList({
                             e.stopPropagation();
                             saveChapterEdit(chapter.id);
                           }}
-                          className="rounded-sm bg-teal-400 px-3 py-1 text-xs font-semibold text-slate-900"
+                          className="rounded-sm bg-[#ff6a3a] px-3 py-1 text-xs font-semibold text-slate-900"
                         >
                           Save
                         </button>
@@ -979,7 +810,7 @@ function ChaptersList({
                             e.stopPropagation();
                             cancelChapterEdit(chapter.id);
                           }}
-                          className="rounded-sm border border-white/20 px-3 py-1 text-xs text-white hover:border-white/40"
+                          className="rounded-sm border border-white/20 px-3 py-1 text-xs text-[#111111] hover:border-white/40"
                         >
                           Cancel
                         </button>
@@ -994,7 +825,7 @@ function ChaptersList({
                             e.stopPropagation();
                             startChapterEdit(chapter.id, chapter);
                           }}
-                          className="rounded-sm border border-white/20 px-3 py-1 text-xs text-white hover:border-white/40"
+                          className="rounded-sm border border-white/20 px-3 py-1 text-xs text-[#111111] hover:border-white/40"
                         >
                           Edit
                         </button>
@@ -1007,7 +838,7 @@ function ChaptersList({
                                 e.stopPropagation();
                                 moveChapter(index, index - 1);
                               }}
-                              className="rounded p-1 hover:bg-white/10 disabled:opacity-30 text-white"
+                              className="rounded p-1 hover:bg-white/10 disabled:opacity-30 text-[#111111]"
                               title="Move Up"
                             >
                               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
@@ -1021,7 +852,7 @@ function ChaptersList({
                                 e.stopPropagation();
                                 moveChapter(index, index + 1);
                               }}
-                              className="rounded p-1 hover:bg-white/10 disabled:opacity-30 text-white"
+                              className="rounded p-1 hover:bg-white/10 disabled:opacity-30 text-[#111111]"
                               title="Move Down"
                             >
                               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
@@ -1039,7 +870,7 @@ function ChaptersList({
                       e.stopPropagation();
                       toggleCollapse(chapter.id);
                     }}
-                    className="rounded-sm border border-white/10 px-3 py-1 text-xs uppercase tracking-[0.2em] text-white/70 hover:border-white/30 hover:text-white"
+                    className="rounded-sm border border-white/10 px-3 py-1 text-xs uppercase tracking-[0.2em] text-[#111111]/70 hover:border-white/30 hover:text-[#111111]"
                   >
                     {collapsedChapters[chapter.id] ? "Expand" : "Collapse"}
                   </button>
@@ -1048,9 +879,9 @@ function ChaptersList({
             </header>
           ) : (
             <div className="space-y-1">
-              <p className="text-[11px] uppercase tracking-[0.3em] text-teal-200">{chapter.kicker}</p>
-              <h4 className="text-lg font-semibold text-white">{chapter.title}</h4>
-              <p className="text-xs text-white/70">{chapter.description}</p>
+              <p className="text-[11px] uppercase tracking-[0.3em] text-[#ff6a3a]">{chapter.kicker}</p>
+              <h4 className="text-lg font-semibold text-[#111111]">{chapter.title}</h4>
+              <p className="text-xs text-[#111111]/70">{chapter.description}</p>
             </div>
           )}
 
@@ -1090,7 +921,7 @@ function ChaptersList({
                   <button
                     type="button"
                     onClick={() => onAddGroup(chapter.id)}
-                    className="rounded-sm border border-teal-300/60 bg-teal-400/10 px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-teal-100 hover:border-teal-300"
+                    className="rounded-sm border border-teal-300/60 bg-[#ff6a3a]/10 px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-teal-100 hover:border-teal-300"
                   >
                     Add group
                   </button>
@@ -1595,16 +1426,16 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
   );
 
   const priceBarBaseClasses =
-    "flex flex-wrap items-center justify-between gap-3 text-sm text-white/80 shadow-2xl backdrop-blur";
+    "flex flex-wrap items-center justify-between gap-3 text-sm text-[#111111]/80 shadow-2xl backdrop-blur";
   const renderPriceBar = (extraClasses: string) => (
     <div className={`${priceBarBaseClasses} ${extraClasses}`}>
       <div>
-        <span className="text-xs uppercase tracking-[0.2em] text-white/50">Total</span>
-        <span className="ml-2 text-lg font-semibold text-white">{currency.format(totalPrice)}</span>
+        <span className="text-xs uppercase tracking-[0.2em] text-[#111111]/50">Total</span>
+        <span className="ml-2 text-lg font-semibold text-[#111111]">{currency.format(totalPrice)}</span>
       </div>
       <button
         type="button"
-        className="rounded-sm bg-teal-400 px-5 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-slate-900 shadow hover:bg-teal-300"
+        className="rounded-sm bg-[#ff6a3a] px-5 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-slate-900 shadow hover:bg-teal-300"
       >
         Buy now
       </button>
@@ -1613,14 +1444,14 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
 
   const mobilePriceBar = (
     <div className="fixed inset-x-0 bottom-0 z-40 px-0 md:hidden">
-      {renderPriceBar("rounded-none border-t border-white/10 bg-slate-900/90 px-5 py-3")}
+      {renderPriceBar("rounded-none border-t border-white/10 bg-[#e9e9e9] px-5 py-3")}
     </div>
   );
 
   const desktopPriceBar = (
     <div className="pointer-events-none absolute left-1/2 bottom-4 hidden -translate-x-1/2 md:block">
       <div className="pointer-events-auto w-full max-w-[480px] px-4">
-        {renderPriceBar("rounded-sm border border-white/10 bg-slate-900/90 px-5 py-3")}
+        {renderPriceBar("rounded-sm border border-white/10 bg-[#e9e9e9] px-5 py-3")}
       </div>
     </div>
   );
@@ -1795,7 +1626,7 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
           {isDesignMode && isEditingHero ? (
             <div className="space-y-3 rounded-sm border border-white/10 bg-white/5 p-4">
               <input
-                className="w-full rounded-sm border border-white/10 bg-slate-900/70 px-3 py-2 text-sm uppercase tracking-[0.4em] text-white"
+                className="w-full rounded-sm border border-white/10 bg-[#e9e9e9] px-3 py-2 text-sm uppercase tracking-[0.4em] text-[#111111]"
                 value={heroDraft.kicker}
                 onChange={(e: ChangeEvent<HTMLInputElement>) =>
                   setHeroDraft((prev) => ({ ...prev, kicker: e.target.value }))
@@ -1803,7 +1634,7 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
                 placeholder="Kicker"
               />
               <input
-                className="w-full rounded-sm border border-white/10 bg-slate-900/70 px-3 py-2 text-3xl font-semibold text-white"
+                className="w-full rounded-sm border border-white/10 bg-[#e9e9e9] px-3 py-2 text-3xl font-semibold text-[#111111]"
                 value={heroDraft.title}
                 onChange={(e: ChangeEvent<HTMLInputElement>) =>
                   setHeroDraft((prev) => ({ ...prev, title: e.target.value }))
@@ -1814,7 +1645,7 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
                 {heroDraft.paragraphs.map((paragraph, index) => (
                   <div key={index} className="flex items-start gap-2">
                     <textarea
-                      className="w-full rounded-sm border border-white/10 bg-slate-900/70 px-3 py-2 text-sm text-white"
+                      className="w-full rounded-sm border border-white/10 bg-[#e9e9e9] px-3 py-2 text-sm text-[#111111]"
                       value={paragraph}
                       onChange={(e: ChangeEvent<HTMLTextAreaElement>) =>
                         setHeroDraft((prev) => {
@@ -1833,7 +1664,7 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
                           paragraphs: prev.paragraphs.filter((_, i) => i !== index),
                         }))
                       }
-                      className="rounded-sm border border-white/20 px-3 py-1 text-xs text-white hover:border-red-300 hover:text-red-200"
+                      className="rounded-sm border border-white/20 px-3 py-1 text-xs text-[#111111] hover:border-red-300 hover:text-red-200"
                     >
                       Delete
                     </button>
@@ -1844,7 +1675,7 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
                   onClick={() =>
                     setHeroDraft((prev) => ({ ...prev, paragraphs: [...prev.paragraphs, ""] }))
                   }
-                  className="rounded-sm border border-teal-300/60 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-teal-200 hover:border-teal-300"
+                  className="rounded-sm border border-teal-300/60 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-[#ff6a3a] hover:border-teal-300"
                 >
                   Add paragraph
                 </button>
@@ -1856,7 +1687,7 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
                     setHero(heroDraft);
                     setIsEditingHero(false);
                   }}
-                  className="rounded-sm bg-teal-400 px-4 py-2 text-xs font-semibold text-slate-900"
+                  className="rounded-sm bg-[#ff6a3a] px-4 py-2 text-xs font-semibold text-slate-900"
                 >
                   Save
                 </button>
@@ -1866,7 +1697,7 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
                     setHeroDraft(hero);
                     setIsEditingHero(false);
                   }}
-                  className="rounded-sm border border-white/20 px-4 py-2 text-xs text-white hover:border-white/40"
+                  className="rounded-sm border border-white/20 px-4 py-2 text-xs text-[#111111] hover:border-white/40"
                 >
                   Cancel
                 </button>
@@ -1886,7 +1717,7 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
                       setHeroDraft(hero);
                       setIsEditingHero(true);
                     }}
-                    className="rounded-sm border border-white/20 px-3 py-1 text-xs text-white hover:border-white/40"
+                    className="rounded-sm border border-white/20 px-3 py-1 text-xs text-[#111111] hover:border-white/40"
                   >
                     Edit
                   </button>
@@ -1910,14 +1741,14 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
         >
           <div className="relative flex-1 min-h-0 w-full">
             {isDesignMode && activeChapter && activeFocusKey && (
-              <div className="absolute left-3 top-3 z-30 w-[300px] space-y-3 rounded-sm border border-white/15 bg-slate-900/80 p-3 text-white shadow-2xl backdrop-blur">
-                <div className="flex items-center justify-between text-xs uppercase tracking-[0.25em] text-white/60">
+              <div className="absolute left-3 top-3 z-30 w-[300px] space-y-3 rounded-sm border border-white/15 bg-[#e9e9e9] p-3 text-[#111111] shadow-2xl backdrop-blur">
+                <div className="flex items-center justify-between text-xs uppercase tracking-[0.25em] text-[#111111]/60">
                   <span>Camera</span>
                   <span className="rounded-sm bg-white/10 px-2 py-0.5 text-[10px] text-teal-100">
                     {activeFocusKey}
                   </span>
                 </div>
-                <div className="flex flex-col gap-2 text-sm text-white/80">
+                <div className="flex flex-col gap-2 text-sm text-[#111111]/80">
                   {!orbitEnabled && (
                     <>
                       <button
@@ -1933,7 +1764,7 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
                           }
                           setOrbitEnabled(true);
                         }}
-                        className="rounded-sm bg-white/10 px-3 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-white hover:bg-white/20"
+                        className="rounded-sm bg-white/10 px-3 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-[#111111] hover:bg-white/20"
                       >
                         Change camera
                       </button>
@@ -1942,8 +1773,8 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
                         onClick={() => setIsMatrixOpen((prev) => !prev)}
                         className={`rounded-sm border border-teal-300/60 px-3 py-2 text-xs font-semibold uppercase tracking-[0.2em] transition-colors ${
                           isMatrixOpen
-                            ? "bg-teal-400 text-slate-900 border-teal-400"
-                            : "text-teal-200 hover:border-teal-300 hover:bg-teal-400/10"
+                            ? "bg-[#ff6a3a] text-slate-900 border-teal-400"
+                            : "text-[#ff6a3a] hover:border-teal-300 hover:bg-[#ff6a3a]/10"
                         }`}
                       >
                         {isMatrixOpen ? "Close Model" : "Model"}
@@ -1952,7 +1783,7 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
                   )}
                   {orbitEnabled && (
                     <div className="space-y-2">
-                      <p className="text-[11px] text-white/60">Use orbit to frame the shot.</p>
+                      <p className="text-[11px] text-[#111111]/60">Use orbit to frame the shot.</p>
                       <div className="flex gap-2">
                         <button
                           type="button"
@@ -1963,7 +1794,7 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
                             setOrbitEnabled(false);
                             setResetCameraToken((t) => t + 1);
                           }}
-                          className="flex-1 rounded-sm border border-white/20 bg-white/10 px-3 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-white hover:border-teal-300 hover:text-teal-100"
+                          className="flex-1 rounded-sm border border-white/20 bg-white/10 px-3 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-[#111111] hover:border-teal-300 hover:text-teal-100"
                         >
                           Reset
                         </button>
@@ -1973,8 +1804,8 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
                           disabled={!orbitCameraState}
                           className={`flex-1 rounded-sm px-3 py-2 text-xs font-semibold uppercase tracking-[0.2em] shadow ${
                             orbitCameraState
-                              ? "bg-teal-400 text-slate-900 hover:bg-teal-300"
-                              : "bg-white/10 text-white/60"
+                              ? "bg-[#ff6a3a] text-slate-900 hover:bg-teal-300"
+                              : "bg-white/10 text-[#111111]/60"
                           }`}
                         >
                           Keep this view
@@ -1983,8 +1814,8 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
                     </div>
                   )}
                 </div>
-                <p className="text-[11px] text-white/50">
-                  Stored for <span className="font-semibold text-white">{activeChapter.title}</span>.
+                <p className="text-[11px] text-[#111111]/50">
+                  Stored for <span className="font-semibold text-[#111111]">{activeChapter.title}</span>.
                 </p>
               </div>
             )}
@@ -1993,14 +1824,14 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
                 <button
                   type="button"
                   onClick={handleUploadModelClick}
-                  className="rounded-sm border border-white/20 bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-white shadow hover:border-teal-300 hover:text-teal-100"
+                  className="rounded-sm border border-white/20 bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-[#111111] shadow hover:border-teal-300 hover:text-teal-100"
                 >
                   Upload model
                 </button>
                 <button
                   type="button"
                   onClick={handleReplaceModel}
-                  className="rounded-sm border border-white/20 bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-white shadow hover:border-teal-300 hover:text-teal-100"
+                  className="rounded-sm border border-white/20 bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-[#111111] shadow hover:border-teal-300 hover:text-teal-100"
                 >
                   Use URL
                 </button>
@@ -2031,14 +1862,14 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
         <div className="fixed inset-0 z-50 flex h-[100dvh] flex-col overflow-hidden bg-black">
           <div className="relative flex-1 min-h-0 w-full">
             {isDesignMode && activeChapter && activeFocusKey && (
-              <div className="absolute left-3 top-3 z-30 w-[300px] space-y-3 rounded-sm border border-white/15 bg-slate-900/80 p-3 text-white shadow-2xl backdrop-blur">
-                <div className="flex items-center justify-between text-xs uppercase tracking-[0.25em] text-white/60">
+              <div className="absolute left-3 top-3 z-30 w-[300px] space-y-3 rounded-sm border border-white/15 bg-[#e9e9e9] p-3 text-[#111111] shadow-2xl backdrop-blur">
+                <div className="flex items-center justify-between text-xs uppercase tracking-[0.25em] text-[#111111]/60">
                   <span>Camera</span>
                   <span className="rounded-sm bg-white/10 px-2 py-0.5 text-[10px] text-teal-100">
                     {activeFocusKey}
                   </span>
                 </div>
-                <div className="flex flex-col gap-2 text-sm text-white/80">
+                <div className="flex flex-col gap-2 text-sm text-[#111111]/80">
                   {!orbitEnabled && (
                     <>
                       <button
@@ -2054,7 +1885,7 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
                           }
                           setOrbitEnabled(true);
                         }}
-                        className="rounded-sm bg-white/10 px-3 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-white hover:bg-white/20"
+                        className="rounded-sm bg-white/10 px-3 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-[#111111] hover:bg-white/20"
                       >
                         Change camera
                       </button>
@@ -2063,8 +1894,8 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
                         onClick={() => setIsMatrixOpen((prev) => !prev)}
                         className={`rounded-sm border border-teal-300/60 px-3 py-2 text-xs font-semibold uppercase tracking-[0.2em] transition-colors ${
                           isMatrixOpen
-                            ? "bg-teal-400 text-slate-900 border-teal-400"
-                            : "text-teal-200 hover:border-teal-300 hover:bg-teal-400/10"
+                            ? "bg-[#ff6a3a] text-slate-900 border-teal-400"
+                            : "text-[#ff6a3a] hover:border-teal-300 hover:bg-[#ff6a3a]/10"
                         }`}
                       >
                         {isMatrixOpen ? "Close Model" : "Model"}
@@ -2073,7 +1904,7 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
                   )}
                   {orbitEnabled && (
                     <div className="space-y-2">
-                      <p className="text-[11px] text-white/60">Use orbit to frame the shot.</p>
+                      <p className="text-[11px] text-[#111111]/60">Use orbit to frame the shot.</p>
                       <div className="flex gap-2">
                         <button
                           type="button"
@@ -2084,7 +1915,7 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
                             setOrbitEnabled(false);
                             setResetCameraToken((t) => t + 1);
                           }}
-                          className="flex-1 rounded-sm border border-white/20 bg-white/10 px-3 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-white hover:border-teal-300 hover:text-teal-100"
+                          className="flex-1 rounded-sm border border-white/20 bg-white/10 px-3 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-[#111111] hover:border-teal-300 hover:text-teal-100"
                         >
                           Reset
                         </button>
@@ -2094,8 +1925,8 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
                           disabled={!orbitCameraState}
                           className={`flex-1 rounded-sm px-3 py-2 text-xs font-semibold uppercase tracking-[0.2em] shadow ${
                             orbitCameraState
-                              ? "bg-teal-400 text-slate-900 hover:bg-teal-300"
-                              : "bg-white/10 text-white/60"
+                              ? "bg-[#ff6a3a] text-slate-900 hover:bg-teal-300"
+                              : "bg-white/10 text-[#111111]/60"
                           }`}
                         >
                           Keep this view
@@ -2104,8 +1935,8 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
                     </div>
                   )}
                 </div>
-                <p className="text-[11px] text-white/50">
-                  Stored for <span className="font-semibold text-white">{activeChapter.title}</span>.
+                <p className="text-[11px] text-[#111111]/50">
+                  Stored for <span className="font-semibold text-[#111111]">{activeChapter.title}</span>.
                 </p>
               </div>
             )}
@@ -2114,14 +1945,14 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
                 <button
                   type="button"
                   onClick={handleUploadModelClick}
-                  className="rounded-sm border border-white/20 bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-white shadow hover:border-teal-300 hover:text-teal-100"
+                  className="rounded-sm border border-white/20 bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-[#111111] shadow hover:border-teal-300 hover:text-teal-100"
                 >
                   Upload model
                 </button>
                 <button
                   type="button"
                   onClick={handleReplaceModel}
-                  className="rounded-sm border border-white/20 bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-white shadow hover:border-teal-300 hover:text-teal-100"
+                  className="rounded-sm border border-white/20 bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-[#111111] shadow hover:border-teal-300 hover:text-teal-100"
                 >
                   Use URL
                 </button>
@@ -2166,7 +1997,7 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
   return (
     <DndProvider backend={HTML5Backend}>
       <div className={mergedClasses.root}>
-        <div className="fixed left-4 top-4 z-50 flex items-center gap-1 rounded-sm border border-white/10 bg-slate-900/80 p-1 text-xs uppercase tracking-[0.3em] text-white/70 shadow-2xl backdrop-blur">
+        <div className="fixed left-4 top-4 z-50 flex items-center gap-1 rounded-sm border border-white/10 bg-[#e9e9e9] p-1 text-xs uppercase tracking-[0.3em] text-[#111111]/70 shadow-2xl backdrop-blur">
           <button
             type="button"
             onClick={() => handleModeChange("design")}
@@ -2196,7 +2027,7 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
           </main>
           
           {!matrixActive && (
-            <aside className="hidden md:flex w-1/3 shrink-0 flex-col gap-8 pl-6 bg-slate-950/50 backdrop-blur-sm">
+            <aside className="hidden md:flex w-1/3 shrink-0 flex-col gap-8 pl-6 bg-[#e9e9e9] backdrop-blur-sm">
               <ChaptersList {...chaptersListProps} trackFocus />
             </aside>
           )}
