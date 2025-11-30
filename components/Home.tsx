@@ -106,6 +106,8 @@ export type HomeClassNames = {
 export type HomeProps = {
   config?: Config;
   classNames?: Partial<HomeClassNames>;
+  initialMode?: "design" | "preview";
+  allowModeSwitch?: boolean;
 };
 
 const defaultConfig = configurator as unknown as Config;
@@ -936,7 +938,17 @@ function ChaptersList({
 }
 
 
-function HomeContent({ config, classNames }: { config: Config; classNames?: Partial<HomeClassNames> }) {
+function HomeContent({
+  config,
+  classNames,
+  initialMode,
+  allowModeSwitch,
+}: {
+  config: Config;
+  classNames?: Partial<HomeClassNames>;
+  initialMode?: "design" | "preview";
+  allowModeSwitch?: boolean;
+}) {
   const [focusTargetConfigs, setFocusTargetConfigs] = useState(config.scene.focusTargets);
   const [sceneModel, setSceneModel] = useState(config.scene.model);
   const [gltfScene, setGltfScene] = useState<Object3D | null>(null);
@@ -981,8 +993,10 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
     }),
     [classNames]
   );
+  const allowSwitch = allowModeSwitch ?? true;
+  const defaultMode = initialMode ?? (allowSwitch ? "design" : "preview");
 
-  const [mode, setMode] = useState<"design" | "preview">("design");
+  const [mode, setMode] = useState<"design" | "preview">(defaultMode);
   const [chapterOrder, setChapterOrder] = useState<string[]>(() =>
     chapters.map((chapter) => chapter.id)
   );
@@ -1022,13 +1036,51 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
   } | null>(null);
   const [isMatrixOpen, setIsMatrixOpen] = useState(false);
   const [collapsedChapters, setCollapsedChapters] = useState<Record<string, boolean>>({});
+  const [isEmbedOpen, setIsEmbedOpen] = useState(false);
+  const [embedCopied, setEmbedCopied] = useState(false);
   const matrixActive = isMatrixOpen && isDesignMode;
-  const handleModeChange = useCallback((nextMode: "design" | "preview") => {
-    setMode(nextMode);
-    if (nextMode === "preview") {
-      setIsMatrixOpen(false);
+  const handleModeChange = useCallback(
+    (nextMode: "design" | "preview") => {
+      if (!allowSwitch) return;
+      setMode(nextMode);
+      if (nextMode === "preview") {
+        setIsMatrixOpen(false);
+      }
+    },
+    [allowSwitch]
+  );
+  const embedConfigPayload = useMemo(() => {
+    const configCopy = {
+      ...config,
+      scene: {
+        ...config.scene,
+        model: {
+          ...config.scene.model,
+          src: sceneModel.src,
+        },
+      },
+    };
+    try {
+      return encodeURIComponent(JSON.stringify(configCopy));
+    } catch {
+      return "";
     }
-  }, []);
+  }, [config, sceneModel.src]);
+  const embedOrigin =
+    typeof window !== "undefined" ? window.location.origin : "";
+  const embedSnippet = useMemo(() => {
+    if (!embedOrigin) return "";
+    const scriptUrl = `${embedOrigin}/embed-launcher.js`;
+    return `<div id="configurator-embed"></div>\n<script src="${scriptUrl}" data-target="configurator-embed" data-model="${encodeURIComponent(
+      sceneModel.src
+    )}" data-config="${embedConfigPayload}" data-height="700"></script>`;
+  }, [embedConfigPayload, embedOrigin, sceneModel.src]);
+  const handleCopyEmbed = useCallback(() => {
+    if (!embedSnippet) return;
+    navigator.clipboard?.writeText(embedSnippet);
+    setEmbedCopied(true);
+    setTimeout(() => setEmbedCopied(false), 1500);
+  }, [embedSnippet]);
   useEffect(() => {
     if (!isClient) return;
     const storedUrl = window.sessionStorage.getItem("droppedModelUrl");
@@ -1631,7 +1683,8 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
 
   const content = (
     <div className="flex flex-col gap-6 pb-20 min-h-screen md:pb-0 md:min-h-screen md:grid md:grid-rows-[auto,1fr] md:gap-8">
-      <div className="flex items-center gap-1 p-1 text-xs uppercase tracking-[0.3em] text-[#111111] shadow-2xl backdrop-blur">
+      {allowSwitch && (
+        <div className="flex items-center gap-1 p-1 text-xs uppercase tracking-[0.3em] text-[#111111] shadow-2xl backdrop-blur">
           <button
             type="button"
             onClick={() => handleModeChange("design")}
@@ -1651,6 +1704,7 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
             Preview
           </button>
         </div>
+      )}
       <section className={`${mergedClasses.heroSection}  overflow-auto pr-2`}>
           {isDesignMode && isEditingHero ? (
             <div className="space-y-3 rounded-sm border border-[#999999] bg-white/5 p-4">
@@ -1733,26 +1787,37 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
               </div>
             </div>
           ) : (
-            <>
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex-1 space-y-2">
-                  <p className={mergedClasses.heroKicker}>{hero.kicker}</p>
-                  <h1 className={mergedClasses.heroTitle}>{hero.title}</h1>
+              <>
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex-1 space-y-2">
+                    <p className={mergedClasses.heroKicker}>{hero.kicker}</p>
+                    <h1 className={mergedClasses.heroTitle}>{hero.title}</h1>
+                  </div>
+                  {isDesignMode && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setHeroDraft(hero);
+                        setIsEditingHero(true);
+                      }}
+                      className="rounded-sm border border-[#999999] px-3 py-1 text-xs text-[#111111] hover:border-[#999999]"
+                    >
+                      Edit
+                    </button>
+                  )}
                 </div>
                 {isDesignMode && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setHeroDraft(hero);
-                      setIsEditingHero(true);
-                    }}
-                    className="rounded-sm border border-[#999999] px-3 py-1 text-xs text-[#111111] hover:border-[#999999]"
-                  >
-                    Edit
-                  </button>
+                  <div className="mt-4 flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setIsEmbedOpen(true)}
+                      className="rounded-sm border border-[#999999] px-3 py-1 text-xs uppercase tracking-[0.3em] text-[#111111] hover:border-[#999999]"
+                    >
+                      Embed
+                    </button>
+                  </div>
                 )}
-              </div>
-              <div className="space-y-2">
+                <div className="space-y-2">
                 {hero.paragraphs.map((paragraph, index) => (
                   <p key={index} className={mergedClasses.heroParagraph}>
                     {paragraph}
@@ -2051,17 +2116,67 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
         </div>
 
         {mobilePriceBar}
+        {isEmbedOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 px-4 py-10">
+            <div className="mx-auto max-w-3xl space-y-4 rounded-3xl border border-white/10 bg-[#111111] p-6 shadow-2xl">
+              <div className="flex items-center justify-between gap-2">
+                <h3 className="text-lg font-semibold text-white">Embed snippet</h3>
+                <button
+                  type="button"
+                  onClick={() => setIsEmbedOpen(false)}
+                  className="rounded-sm border border-white/20 px-3 py-1 text-[11px] uppercase tracking-[0.2em] text-white hover:border-white/40"
+                >
+                  Close
+                </button>
+              </div>
+              <p className="text-xs uppercase tracking-[0.3em] text-white/60">
+                Paste this block into your page and it will render the configurator with your model + config.
+              </p>
+              <textarea
+                readOnly
+                value={embedSnippet}
+                className="min-h-[150px] w-full rounded-sm border border-white/10 bg-[#111111]/70 p-4 text-[11px] font-mono text-white"
+              />
+              <div className="flex flex-wrap items-center gap-3">
+                <button
+                  type="button"
+                  onClick={handleCopyEmbed}
+                  disabled={!embedSnippet}
+                  className="rounded-sm bg-[#ff6a3a] px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-[#111111] shadow transition hover:bg-[#ff6a3a]/90 disabled:opacity-40"
+                >
+                  {embedCopied ? "Copied!" : "Copy snippet"}
+                </button>
+                <span className="text-[11px] uppercase tracking-[0.3em] text-white/60">
+                  Powered by <em>embed-launcher.js</em>
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </DndProvider>
   );
 }
 
-export default function Home({ config: configProp, classNames }: HomeProps) {
+export default function Home({
+  config: configProp,
+  classNames,
+  initialMode,
+  allowModeSwitch,
+}: HomeProps) {
   const baseConfig = useMemo(() => configProp ?? defaultConfig, [configProp]);
   const normalizedConfig = useMemo(() => normalizeConfigPrices(baseConfig), [baseConfig]);
   const configKey = useMemo(() => JSON.stringify(normalizedConfig), [normalizedConfig]);
 
-  return <HomeContent key={configKey} config={normalizedConfig} classNames={classNames} />;
+  return (
+    <HomeContent
+      key={configKey}
+      config={normalizedConfig}
+      classNames={classNames}
+      initialMode={initialMode}
+      allowModeSwitch={allowModeSwitch}
+    />
+  );
 }
 
 export { defaultConfig, defaultClasses };
