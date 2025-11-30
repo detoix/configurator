@@ -736,15 +736,19 @@ function buildMeshTree(node: Object3D, counter: { current: number }): MeshTreeNo
 function DraggableChapterItem({
   chapter,
   index,
+  totalCount,
   moveChapter,
   onDelete,
   active,
+  onSelect,
 }: {
   chapter: Config["chapters"][number];
   index: number;
+  totalCount: number;
   moveChapter: (from: number, to: number) => void;
   onDelete: (id: string) => void;
   active: boolean;
+  onSelect: () => void;
 }) {
   const ref = useRef<HTMLDivElement | null>(null);
 
@@ -791,6 +795,7 @@ function DraggableChapterItem({
   return (
     <div
       ref={ref}
+      onClick={onSelect}
       className={`flex cursor-move items-center justify-between rounded-xl border px-3 py-2 text-sm shadow-sm transition ${cardClass}`}
       style={{ opacity: isDragging ? 0.5 : 1 }}
     >
@@ -799,6 +804,38 @@ function DraggableChapterItem({
         {chapter.title}
       </span>
       <div className="flex items-center gap-2">
+        {active && (
+          <div className="flex gap-1 mr-2">
+            <button
+              type="button"
+              disabled={index === 0}
+              onClick={(e) => {
+                e.stopPropagation();
+                moveChapter(index, index - 1);
+              }}
+              className="rounded p-1 hover:bg-white/10 disabled:opacity-30"
+              title="Move Up"
+            >
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                <path d="M12 19V5M5 12l7-7 7 7" />
+              </svg>
+            </button>
+            <button
+              type="button"
+              disabled={index === totalCount - 1}
+              onClick={(e) => {
+                e.stopPropagation();
+                moveChapter(index, index + 1);
+              }}
+              className="rounded p-1 hover:bg-white/10 disabled:opacity-30"
+              title="Move Down"
+            >
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                <path d="M12 5v14M5 12l7 7 7-7" />
+              </svg>
+            </button>
+          </div>
+        )}
         <span className="text-xs uppercase tracking-[0.2em] text-white/40">{chapter.kicker}</span>
         <button
           type="button"
@@ -835,6 +872,9 @@ function ChaptersList({
   onOpenModel,
   onDeleteGroup,
   trackFocus = false,
+  collapsedChapters,
+  toggleCollapse,
+  moveChapter,
 }: {
   orderedChapters: Config["chapters"];
   mode: "design" | "preview";
@@ -855,19 +895,26 @@ function ChaptersList({
   onOpenModel: (chapterId: string, groupId: string, optionValue: string) => void;
   onDeleteGroup: (chapterId: string, groupId: string) => void;
   trackFocus?: boolean;
+  collapsedChapters: Record<string, boolean>;
+  toggleCollapse: (chapterId: string) => void;
+  moveChapter?: (from: number, to: number) => void;
 }) {
   const isDesignMode = mode === "design";
 
   return (
     <div className="space-y-8 chapter-list-container">
-      {orderedChapters.map((chapter) => (
+      {orderedChapters.map((chapter, index) => (
         <div
           key={chapter.id}
           ref={(node) => {
             if (trackFocus && chapterRefs) chapterRefs.current[chapter.id] = node;
           }}
           data-chapter-id={chapter.id}
-          className={isDesignMode ? mergedClasses.chapterContainer : "space-y-3 rounded-2xl border border-white/10 bg-slate-900/60 p-4"}
+          className={`${
+            isDesignMode
+              ? mergedClasses.chapterContainer
+              : "space-y-3 rounded-2xl border border-white/10 bg-slate-900/60 p-4"
+          } relative`}
           aria-label={`${chapter.title} configuration focus`}
         >
           {isDesignMode ? (
@@ -912,33 +959,90 @@ function ChaptersList({
                     </>
                   )}
                 </div>
-                <div className="flex flex-col gap-2">
+                <div className="flex flex-col gap-2 items-end">
                   {editingChapters[chapter.id] ? (
                     <>
-                      <button
-                        type="button"
-                        onClick={() => saveChapterEdit(chapter.id)}
-                        className="rounded-full bg-teal-400 px-3 py-1 text-xs font-semibold text-slate-900"
-                      >
-                        Save
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => cancelChapterEdit(chapter.id)}
-                        className="rounded-full border border-white/20 px-3 py-1 text-xs text-white hover:border-white/40"
-                      >
-                        Cancel
-                      </button>
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            saveChapterEdit(chapter.id);
+                          }}
+                          className="rounded-full bg-teal-400 px-3 py-1 text-xs font-semibold text-slate-900"
+                        >
+                          Save
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            cancelChapterEdit(chapter.id);
+                          }}
+                          className="rounded-full border border-white/20 px-3 py-1 text-xs text-white hover:border-white/40"
+                        >
+                          Cancel
+                        </button>
+                      </div>
                     </>
                   ) : (
-                    <button
-                      type="button"
-                      onClick={() => startChapterEdit(chapter.id, chapter)}
-                      className="rounded-full border border-white/20 px-3 py-1 text-xs text-white hover:border-white/40"
-                    >
-                      Edit
-                    </button>
+                    <>
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            startChapterEdit(chapter.id, chapter);
+                          }}
+                          className="rounded-full border border-white/20 px-3 py-1 text-xs text-white hover:border-white/40"
+                        >
+                          Edit
+                        </button>
+                        {moveChapter && (
+                          <div className="flex gap-1">
+                            <button
+                              type="button"
+                              disabled={index === 0}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                moveChapter(index, index - 1);
+                              }}
+                              className="rounded p-1 hover:bg-white/10 disabled:opacity-30 text-white"
+                              title="Move Up"
+                            >
+                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                                <path d="M12 19V5M5 12l7-7 7 7" />
+                              </svg>
+                            </button>
+                            <button
+                              type="button"
+                              disabled={index === orderedChapters.length - 1}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                moveChapter(index, index + 1);
+                              }}
+                              className="rounded p-1 hover:bg-white/10 disabled:opacity-30 text-white"
+                              title="Move Down"
+                            >
+                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                                <path d="M12 5v14M5 12l7 7 7-7" />
+                              </svg>
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </>
                   )}
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleCollapse(chapter.id);
+                    }}
+                    className="rounded-full border border-white/10 px-3 py-1 text-xs uppercase tracking-[0.2em] text-white/70 hover:border-white/30 hover:text-white"
+                  >
+                    {collapsedChapters[chapter.id] ? "Expand" : "Collapse"}
+                  </button>
                 </div>
               </div>
             </header>
@@ -950,53 +1054,56 @@ function ChaptersList({
             </div>
           )}
 
-          <div className={isDesignMode ? mergedClasses.groupWrapper : "space-y-3"}>
-            {chapter.groups.map((group) =>
-              isDesignMode ? (
-                <EditableConfigGroup
-                  key={group.id}
-                  group={group}
-                  value={selections[group.id]}
-                  onChange={(next) => onChangeSelection(group.id, next)}
-                  onAdd={() => onAddOption(chapter.id, group.id)}
-                  onDelete={(optionValue) => onDeleteOption(chapter.id, group.id, optionValue)}
-                  onEdit={(originalValue, next) =>
-                    onEditOption(chapter.id, group.id, originalValue, next)
-                  }
-                  onOpenModel={(optionValue) =>
-                    onOpenModel(chapter.id, group.id, optionValue)
-                  }
-                  onDeleteGroup={() => onDeleteGroup(chapter.id, group.id)}
-                />
-              ) : (
-                <ConfigRadioGroup
-                  key={group.id}
-                  id={group.id}
-                  title={group.title}
-                  helper={group.helper}
-                  options={group.options}
-                  value={selections[group.id]}
-                  onChange={(next) => onChangeSelection(group.id, next)}
-                />
-              )
-            )}
-            {isDesignMode && (
-              <div className="mt-4 flex justify-end">
-                <button
-                  type="button"
-                  onClick={() => onAddGroup(chapter.id)}
-                  className="rounded-full border border-teal-300/60 bg-teal-400/10 px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-teal-100 hover:border-teal-300"
-                >
-                  Add group
-                </button>
-              </div>
-            )}
-          </div>
+          {!collapsedChapters[chapter.id] && (
+            <div className={isDesignMode ? mergedClasses.groupWrapper : "space-y-3"}>
+              {chapter.groups.map((group) =>
+                isDesignMode ? (
+                  <EditableConfigGroup
+                    key={group.id}
+                    group={group}
+                    value={selections[group.id]}
+                    onChange={(next) => onChangeSelection(group.id, next)}
+                    onAdd={() => onAddOption(chapter.id, group.id)}
+                    onDelete={(optionValue) => onDeleteOption(chapter.id, group.id, optionValue)}
+                    onEdit={(originalValue, next) =>
+                      onEditOption(chapter.id, group.id, originalValue, next)
+                    }
+                    onOpenModel={(optionValue) =>
+                      onOpenModel(chapter.id, group.id, optionValue)
+                    }
+                    onDeleteGroup={() => onDeleteGroup(chapter.id, group.id)}
+                  />
+                ) : (
+                  <ConfigRadioGroup
+                    key={group.id}
+                    id={group.id}
+                    title={group.title}
+                    helper={group.helper}
+                    options={group.options}
+                    value={selections[group.id]}
+                    onChange={(next) => onChangeSelection(group.id, next)}
+                  />
+                )
+              )}
+              {isDesignMode && (
+                <div className="mt-4 flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => onAddGroup(chapter.id)}
+                    className="rounded-full border border-teal-300/60 bg-teal-400/10 px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-teal-100 hover:border-teal-300"
+                  >
+                    Add group
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       ))}
     </div>
   );
 }
+
 
 function HomeContent({ config, classNames }: { config: Config; classNames?: Partial<HomeClassNames> }) {
   const [focusTargetConfigs, setFocusTargetConfigs] = useState(config.scene.focusTargets);
@@ -1083,6 +1190,7 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
     optionValue: string;
   } | null>(null);
   const [isMatrixOpen, setIsMatrixOpen] = useState(false);
+  const [collapsedChapters, setCollapsedChapters] = useState<Record<string, boolean>>({});
   const matrixActive = isMatrixOpen && isDesignMode;
   const handleModeChange = useCallback((nextMode: "design" | "preview") => {
     setMode(nextMode);
@@ -1664,6 +1772,10 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
     onEditOption: handleEditOption,
     onOpenModel: openOptionModelEditor,
     onDeleteGroup: handleDeleteGroup,
+    collapsedChapters,
+    toggleCollapse: (chapterId: string) =>
+      setCollapsedChapters((prev) => ({ ...prev, [chapterId]: !prev[chapterId] })),
+    moveChapter,
   };
 
   const content = (
@@ -2042,7 +2154,7 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
   return (
     <DndProvider backend={HTML5Backend}>
       <div className={mergedClasses.root}>
-        <div className="fixed right-4 top-4 z-50 flex items-center gap-1 rounded-full border border-white/10 bg-slate-900/80 p-1 text-xs uppercase tracking-[0.3em] text-white/70 shadow-2xl backdrop-blur">
+        <div className="fixed left-4 top-4 z-50 flex items-center gap-1 rounded-full border border-white/10 bg-slate-900/80 p-1 text-xs uppercase tracking-[0.3em] text-white/70 shadow-2xl backdrop-blur">
           <button
             type="button"
             onClick={() => handleModeChange("design")}

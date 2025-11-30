@@ -3,8 +3,7 @@
     "kicker": "Orbital Defense Lab",
     "title": "Configure the RX-9 Modular Sci‑Fi Turret",
     "paragraphs": [
-      "A frontline turret should be tailored to mission profiles, not frozen in a catalog. This configurator lets you sculpt shielding, weapon modules, optics, and drive systems with instant visual feedback on the 3D build.",
-      "Each chapter locks in a different combat layer—armor tone, barrel arrays, power routing, AI assists, and movement. Dial in a variant for perimeter defense, vehicle mounting, or autonomous patrol without waiting on another render pass."
+      "A frontline turret should be tailored to mission profiles, not frozen in a catalog. This configurator lets you sculpt shielding, weapon modules, optics, and drive systems with instant visual feedback on the 3D build."
     ]
   },
   "scene": {
