@@ -119,8 +119,8 @@ const defaultClasses: HomeClassNames = {
   heroParagraph: "text-base text-white/70",
   chaptersSection: "space-y-16",
   canvasWrapper:
-    "sticky top-0 z-20 h-[33vh] min-h-[280px] max-h-[70vh] w-screen max-w-none overflow-hidden rounded-none bg-black shadow-2xl sm:mx-0 sm:w-full sm:rounded-3xl md:static md:top-auto md:h-full md:min-h-0 md:max-h-none md:w-full md:rounded-3xl",
-  chapterContainer: "space-y-8 pb-32",
+    "sticky top-0 z-20 h-[33vh] min-h-[280px] max-h-[70vh] w-screen max-w-none overflow-hidden rounded-sm bg-black shadow-2xl sm:mx-0 sm:w-full sm:rounded-sm md:static md:top-auto md:h-full md:min-h-0 md:max-h-none md:w-full md:rounded-sm",
+  chapterContainer: "space-y-8",
   chapterHeader: "space-y-3",
   chapterKicker: "text-sm uppercase tracking-[0.4em] text-teal-200",
   chapterTitle: "text-3xl font-semibold",
@@ -347,7 +347,7 @@ function ConfigRadioGroup({ title, helper, options, value, onChange }: ConfigRad
   const name = useId();
 
   return (
-    <fieldset className="rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur">
+    <fieldset className="rounded-sm border border-white/10 bg-white/5 p-6 backdrop-blur">
       <legend className="text-base font-semibold uppercase tracking-[0.3em] text-white/70">
         {title}
       </legend>
@@ -359,7 +359,7 @@ function ConfigRadioGroup({ title, helper, options, value, onChange }: ConfigRad
             <label
               key={option.value}
               htmlFor={id}
-              className={`flex cursor-pointer flex-col gap-1 rounded-2xl border px-4 py-3 ${
+              className={`flex cursor-pointer flex-col gap-1 rounded-sm border px-4 py-3 ${
                 value === option.value
                   ? "border-teal-400 bg-teal-400/10 text-white"
                   : "border-white/10 text-white/80"
@@ -429,7 +429,7 @@ function EditableOptionRow({
       : "border-white/10 bg-white/5 text-white/80 hover:border-white/20";
 
   return (
-    <div className={`flex flex-col gap-3 rounded-2xl border px-4 py-3 transition ${cardClass}`}>
+    <div className={`flex flex-col gap-3 rounded-sm border px-4 py-3 transition ${cardClass}`}>
       <div className="flex items-start justify-between gap-3">
         <label className="flex flex-1 cursor-pointer items-start gap-3" onClick={onSelect}>
           <input
@@ -442,7 +442,7 @@ function EditableOptionRow({
           {isEditing ? (
             <div className="flex-1 space-y-2">
               <input
-                className="w-full rounded-lg border border-white/10 bg-slate-900/70 px-3 py-2 text-sm text-white"
+                className="w-full rounded-sm border border-white/10 bg-slate-900/70 px-3 py-2 text-sm text-white"
                 value={draft.label}
                 onChange={(e: ChangeEvent<HTMLInputElement>) =>
                   setDraft((prev) => ({ ...prev, label: e.target.value }))
@@ -450,7 +450,7 @@ function EditableOptionRow({
                 placeholder="Label"
               />
               <input
-                className="w-full rounded-lg border border-white/10 bg-slate-900/70 px-3 py-2 text-sm text-white"
+                className="w-full rounded-sm border border-white/10 bg-slate-900/70 px-3 py-2 text-sm text-white"
                 value={draft.description}
                 onChange={(e: ChangeEvent<HTMLInputElement>) =>
                   setDraft((prev) => ({ ...prev, description: e.target.value }))
@@ -459,7 +459,7 @@ function EditableOptionRow({
               />
               <input
                 type="number"
-                className="w-full rounded-lg border border-white/10 bg-slate-900/70 px-3 py-2 text-sm text-white"
+                className="w-full rounded-sm border border-white/10 bg-slate-900/70 px-3 py-2 text-sm text-white"
                 value={draft.price}
                 onChange={(e: ChangeEvent<HTMLInputElement>) =>
                   setDraft((prev) => ({ ...prev, price: parseFloat(e.target.value) || 0 }))
@@ -480,7 +480,7 @@ function EditableOptionRow({
             <button
               type="button"
               onClick={handleSave}
-              className="rounded-full bg-teal-400 px-3 py-1 text-xs font-semibold text-slate-900"
+              className="rounded-sm bg-teal-400 px-3 py-1 text-xs font-semibold text-slate-900"
             >
               Save
             </button>
@@ -488,7 +488,7 @@ function EditableOptionRow({
             <button
               type="button"
               onClick={() => setIsEditing(true)}
-              className="rounded-full border border-white/20 px-3 py-1 text-xs text-white hover:border-white/40"
+              className="rounded-sm border border-white/20 px-3 py-1 text-xs text-white hover:border-white/40"
             >
               Edit
             </button>
@@ -496,7 +496,7 @@ function EditableOptionRow({
           <button
             type="button"
             onClick={isEditing ? () => setIsEditing(false) : onDelete}
-            className="rounded-full border border-white/20 px-3 py-1 text-xs text-white hover:border-white/40"
+            className="rounded-sm border border-white/20 px-3 py-1 text-xs text-white hover:border-white/40"
             >
               {isEditing ? "Cancel" : "Delete"}
             </button>
@@ -528,7 +528,7 @@ function EditableConfigGroup({
   const name = useId();
 
   return (
-    <fieldset className="rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur">
+    <fieldset className="rounded-sm border border-white/10 bg-white/5 p-6 backdrop-blur">
       <div className="flex items-center justify-between">
         <div>
           <legend className="text-base font-semibold uppercase tracking-[0.3em] text-white/70">
@@ -539,14 +539,14 @@ function EditableConfigGroup({
         <button
           type="button"
           onClick={onAdd}
-          className="rounded-full border border-teal-300/60 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-teal-200 hover:border-teal-300"
+          className="rounded-sm border border-teal-300/60 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-teal-200 hover:border-teal-300"
         >
           Add
         </button>
         <button
           type="button"
           onClick={onDeleteGroup}
-          className="rounded-full border border-red-300/60 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-red-100 hover:border-red-300"
+          className="rounded-sm border border-red-300/60 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-red-100 hover:border-red-300"
         >
           Delete group
         </button>
@@ -678,7 +678,7 @@ function MeshTreeNodeView({
   const checked = visibility[node.name] !== false;
   const hasChildren = node.children.length > 0;
   return (
-    <div className="space-y-1 rounded-lg border border-white/5 bg-white/5 p-2">
+    <div className="space-y-1 rounded-sm border border-white/5 bg-white/5 p-2">
       {node.isMesh && (
         <label className="flex items-center gap-2 text-sm">
           <input
@@ -796,11 +796,11 @@ function DraggableChapterItem({
     <div
       ref={ref}
       onClick={onSelect}
-      className={`flex cursor-move items-center justify-between rounded-xl border px-3 py-2 text-sm shadow-sm transition ${cardClass}`}
+      className={`flex cursor-move items-center justify-between rounded-sm border px-3 py-2 text-sm shadow-sm transition ${cardClass}`}
       style={{ opacity: isDragging ? 0.5 : 1 }}
     >
       <span className="flex items-center gap-2">
-        <span className="h-1.5 w-1.5 rounded-full bg-teal-300" aria-hidden />
+        <span className="h-1.5 w-1.5 rounded-sm bg-teal-300" aria-hidden />
         {chapter.title}
       </span>
       <div className="flex items-center gap-2">
@@ -843,7 +843,7 @@ function DraggableChapterItem({
             e.stopPropagation();
             onDelete(chapter.id);
           }}
-          className="rounded-full border border-white/20 px-2 py-1 text-[10px] uppercase tracking-[0.2em] text-white hover:border-red-300 hover:text-red-200"
+          className="rounded-sm border border-white/20 px-2 py-1 text-[10px] uppercase tracking-[0.2em] text-white hover:border-red-300 hover:text-red-200"
         >
           Delete
         </button>
@@ -911,9 +911,9 @@ function ChaptersList({
           }}
           data-chapter-id={chapter.id}
           className={`${
-            isDesignMode
+            true
               ? mergedClasses.chapterContainer
-              : "space-y-3 rounded-2xl border border-white/10 bg-slate-900/60 p-4"
+              : "space-y-3 rounded-sm border border-white/10 bg-slate-900/60 p-4"
           } relative`}
           aria-label={`${chapter.title} configuration focus`}
         >
@@ -924,7 +924,7 @@ function ChaptersList({
                   {editingChapters[chapter.id] ? (
                     <>
                       <input
-                        className="w-full rounded-lg border border-white/10 bg-slate-900/70 px-3 py-2 text-sm text-white"
+                        className="w-full rounded-sm border border-white/10 bg-slate-900/70 px-3 py-2 text-sm text-white"
                         value={(chapterDrafts[chapter.id]?.kicker as string | undefined) ?? chapter.kicker}
                         onChange={(e: ChangeEvent<HTMLInputElement>) =>
                           updateChapterDraft(chapter.id, "kicker", e.target.value)
@@ -932,7 +932,7 @@ function ChaptersList({
                         placeholder="Kicker"
                       />
                       <input
-                        className="w-full rounded-lg border border-white/10 bg-slate-900/70 px-3 py-2 text-lg font-semibold text-white"
+                        className="w-full rounded-sm border border-white/10 bg-slate-900/70 px-3 py-2 text-lg font-semibold text-white"
                         value={(chapterDrafts[chapter.id]?.title as string | undefined) ?? chapter.title}
                         onChange={(e: ChangeEvent<HTMLInputElement>) =>
                           updateChapterDraft(chapter.id, "title", e.target.value)
@@ -940,7 +940,7 @@ function ChaptersList({
                         placeholder="Title"
                       />
                       <textarea
-                        className="w-full rounded-lg border border-white/10 bg-slate-900/70 px-3 py-2 text-sm text-white"
+                        className="w-full rounded-sm border border-white/10 bg-slate-900/70 px-3 py-2 text-sm text-white"
                         value={
                           (chapterDrafts[chapter.id]?.description as string | undefined) ?? chapter.description
                         }
@@ -969,7 +969,7 @@ function ChaptersList({
                             e.stopPropagation();
                             saveChapterEdit(chapter.id);
                           }}
-                          className="rounded-full bg-teal-400 px-3 py-1 text-xs font-semibold text-slate-900"
+                          className="rounded-sm bg-teal-400 px-3 py-1 text-xs font-semibold text-slate-900"
                         >
                           Save
                         </button>
@@ -979,7 +979,7 @@ function ChaptersList({
                             e.stopPropagation();
                             cancelChapterEdit(chapter.id);
                           }}
-                          className="rounded-full border border-white/20 px-3 py-1 text-xs text-white hover:border-white/40"
+                          className="rounded-sm border border-white/20 px-3 py-1 text-xs text-white hover:border-white/40"
                         >
                           Cancel
                         </button>
@@ -994,7 +994,7 @@ function ChaptersList({
                             e.stopPropagation();
                             startChapterEdit(chapter.id, chapter);
                           }}
-                          className="rounded-full border border-white/20 px-3 py-1 text-xs text-white hover:border-white/40"
+                          className="rounded-sm border border-white/20 px-3 py-1 text-xs text-white hover:border-white/40"
                         >
                           Edit
                         </button>
@@ -1039,7 +1039,7 @@ function ChaptersList({
                       e.stopPropagation();
                       toggleCollapse(chapter.id);
                     }}
-                    className="rounded-full border border-white/10 px-3 py-1 text-xs uppercase tracking-[0.2em] text-white/70 hover:border-white/30 hover:text-white"
+                    className="rounded-sm border border-white/10 px-3 py-1 text-xs uppercase tracking-[0.2em] text-white/70 hover:border-white/30 hover:text-white"
                   >
                     {collapsedChapters[chapter.id] ? "Expand" : "Collapse"}
                   </button>
@@ -1090,7 +1090,7 @@ function ChaptersList({
                   <button
                     type="button"
                     onClick={() => onAddGroup(chapter.id)}
-                    className="rounded-full border border-teal-300/60 bg-teal-400/10 px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-teal-100 hover:border-teal-300"
+                    className="rounded-sm border border-teal-300/60 bg-teal-400/10 px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-teal-100 hover:border-teal-300"
                   >
                     Add group
                   </button>
@@ -1594,24 +1594,35 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
     [updateGroupOptions]
   );
 
-  const priceBar = useMemo(
-    () => (
-      <div className="fixed inset-x-0 bottom-0 z-40 px-0 md:bottom-4 md:left-1/2 md:right-auto md:w-full md:max-w-4xl md:-translate-x-1/2 md:px-4 md:pb-0">
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-none border-t border-white/10 bg-slate-900/90 px-5 py-3 text-sm text-white/80 shadow-2xl backdrop-blur md:rounded-2xl md:border">
-          <div>
-            <span className="text-xs uppercase tracking-[0.2em] text-white/50">Total</span>
-            <span className="ml-2 text-lg font-semibold text-white">{currency.format(totalPrice)}</span>
-          </div>
-          <button
-            type="button"
-            className="rounded-full bg-teal-400 px-5 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-slate-900 shadow hover:bg-teal-300"
-          >
-            Buy now
-          </button>
-        </div>
+  const priceBarBaseClasses =
+    "flex flex-wrap items-center justify-between gap-3 text-sm text-white/80 shadow-2xl backdrop-blur";
+  const renderPriceBar = (extraClasses: string) => (
+    <div className={`${priceBarBaseClasses} ${extraClasses}`}>
+      <div>
+        <span className="text-xs uppercase tracking-[0.2em] text-white/50">Total</span>
+        <span className="ml-2 text-lg font-semibold text-white">{currency.format(totalPrice)}</span>
       </div>
-    ),
-    [totalPrice]
+      <button
+        type="button"
+        className="rounded-sm bg-teal-400 px-5 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-slate-900 shadow hover:bg-teal-300"
+      >
+        Buy now
+      </button>
+    </div>
+  );
+
+  const mobilePriceBar = (
+    <div className="fixed inset-x-0 bottom-0 z-40 px-0 md:hidden">
+      {renderPriceBar("rounded-none border-t border-white/10 bg-slate-900/90 px-5 py-3")}
+    </div>
+  );
+
+  const desktopPriceBar = (
+    <div className="pointer-events-none absolute left-1/2 bottom-4 hidden -translate-x-1/2 md:block">
+      <div className="pointer-events-auto w-full max-w-[480px] px-4">
+        {renderPriceBar("rounded-sm border border-white/10 bg-slate-900/90 px-5 py-3")}
+      </div>
+    </div>
   );
 
   const handleReplaceModel = useCallback(() => {
@@ -1779,12 +1790,12 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
   };
 
   const content = (
-    <div className="flex flex-col gap-6 pb-28 min-h-screen md:pb-0 md:min-h-screen md:grid md:grid-rows-[auto,1fr] md:gap-8">
+    <div className="flex flex-col gap-6 pb-20 min-h-screen md:pb-0 md:min-h-screen md:grid md:grid-rows-[auto,1fr] md:gap-8">
       <section className={`${mergedClasses.heroSection}  overflow-auto pr-2`}>
           {isDesignMode && isEditingHero ? (
-            <div className="space-y-3 rounded-3xl border border-white/10 bg-white/5 p-4">
+            <div className="space-y-3 rounded-sm border border-white/10 bg-white/5 p-4">
               <input
-                className="w-full rounded-lg border border-white/10 bg-slate-900/70 px-3 py-2 text-sm uppercase tracking-[0.4em] text-white"
+                className="w-full rounded-sm border border-white/10 bg-slate-900/70 px-3 py-2 text-sm uppercase tracking-[0.4em] text-white"
                 value={heroDraft.kicker}
                 onChange={(e: ChangeEvent<HTMLInputElement>) =>
                   setHeroDraft((prev) => ({ ...prev, kicker: e.target.value }))
@@ -1792,7 +1803,7 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
                 placeholder="Kicker"
               />
               <input
-                className="w-full rounded-lg border border-white/10 bg-slate-900/70 px-3 py-2 text-3xl font-semibold text-white"
+                className="w-full rounded-sm border border-white/10 bg-slate-900/70 px-3 py-2 text-3xl font-semibold text-white"
                 value={heroDraft.title}
                 onChange={(e: ChangeEvent<HTMLInputElement>) =>
                   setHeroDraft((prev) => ({ ...prev, title: e.target.value }))
@@ -1803,7 +1814,7 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
                 {heroDraft.paragraphs.map((paragraph, index) => (
                   <div key={index} className="flex items-start gap-2">
                     <textarea
-                      className="w-full rounded-lg border border-white/10 bg-slate-900/70 px-3 py-2 text-sm text-white"
+                      className="w-full rounded-sm border border-white/10 bg-slate-900/70 px-3 py-2 text-sm text-white"
                       value={paragraph}
                       onChange={(e: ChangeEvent<HTMLTextAreaElement>) =>
                         setHeroDraft((prev) => {
@@ -1822,7 +1833,7 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
                           paragraphs: prev.paragraphs.filter((_, i) => i !== index),
                         }))
                       }
-                      className="rounded-full border border-white/20 px-3 py-1 text-xs text-white hover:border-red-300 hover:text-red-200"
+                      className="rounded-sm border border-white/20 px-3 py-1 text-xs text-white hover:border-red-300 hover:text-red-200"
                     >
                       Delete
                     </button>
@@ -1833,7 +1844,7 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
                   onClick={() =>
                     setHeroDraft((prev) => ({ ...prev, paragraphs: [...prev.paragraphs, ""] }))
                   }
-                  className="rounded-full border border-teal-300/60 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-teal-200 hover:border-teal-300"
+                  className="rounded-sm border border-teal-300/60 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-teal-200 hover:border-teal-300"
                 >
                   Add paragraph
                 </button>
@@ -1845,7 +1856,7 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
                     setHero(heroDraft);
                     setIsEditingHero(false);
                   }}
-                  className="rounded-full bg-teal-400 px-4 py-2 text-xs font-semibold text-slate-900"
+                  className="rounded-sm bg-teal-400 px-4 py-2 text-xs font-semibold text-slate-900"
                 >
                   Save
                 </button>
@@ -1855,7 +1866,7 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
                     setHeroDraft(hero);
                     setIsEditingHero(false);
                   }}
-                  className="rounded-full border border-white/20 px-4 py-2 text-xs text-white hover:border-white/40"
+                  className="rounded-sm border border-white/20 px-4 py-2 text-xs text-white hover:border-white/40"
                 >
                   Cancel
                 </button>
@@ -1875,7 +1886,7 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
                       setHeroDraft(hero);
                       setIsEditingHero(true);
                     }}
-                    className="rounded-full border border-white/20 px-3 py-1 text-xs text-white hover:border-white/40"
+                    className="rounded-sm border border-white/20 px-3 py-1 text-xs text-white hover:border-white/40"
                   >
                     Edit
                   </button>
@@ -1899,10 +1910,10 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
         >
           <div className="relative flex-1 min-h-0 w-full">
             {isDesignMode && activeChapter && activeFocusKey && (
-              <div className="absolute left-3 top-3 z-30 w-[300px] space-y-3 rounded-2xl border border-white/15 bg-slate-900/80 p-3 text-white shadow-2xl backdrop-blur">
+              <div className="absolute left-3 top-3 z-30 w-[300px] space-y-3 rounded-sm border border-white/15 bg-slate-900/80 p-3 text-white shadow-2xl backdrop-blur">
                 <div className="flex items-center justify-between text-xs uppercase tracking-[0.25em] text-white/60">
                   <span>Camera</span>
-                  <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] text-teal-100">
+                  <span className="rounded-sm bg-white/10 px-2 py-0.5 text-[10px] text-teal-100">
                     {activeFocusKey}
                   </span>
                 </div>
@@ -1922,14 +1933,14 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
                           }
                           setOrbitEnabled(true);
                         }}
-                        className="rounded-full bg-white/10 px-3 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-white hover:bg-white/20"
+                        className="rounded-sm bg-white/10 px-3 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-white hover:bg-white/20"
                       >
                         Change camera
                       </button>
                       <button
                         type="button"
                         onClick={() => setIsMatrixOpen((prev) => !prev)}
-                        className={`rounded-full border border-teal-300/60 px-3 py-2 text-xs font-semibold uppercase tracking-[0.2em] transition-colors ${
+                        className={`rounded-sm border border-teal-300/60 px-3 py-2 text-xs font-semibold uppercase tracking-[0.2em] transition-colors ${
                           isMatrixOpen
                             ? "bg-teal-400 text-slate-900 border-teal-400"
                             : "text-teal-200 hover:border-teal-300 hover:bg-teal-400/10"
@@ -1952,7 +1963,7 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
                             setOrbitEnabled(false);
                             setResetCameraToken((t) => t + 1);
                           }}
-                          className="flex-1 rounded-full border border-white/20 bg-white/10 px-3 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-white hover:border-teal-300 hover:text-teal-100"
+                          className="flex-1 rounded-sm border border-white/20 bg-white/10 px-3 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-white hover:border-teal-300 hover:text-teal-100"
                         >
                           Reset
                         </button>
@@ -1960,7 +1971,7 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
                           type="button"
                           onClick={handleKeepCurrentView}
                           disabled={!orbitCameraState}
-                          className={`flex-1 rounded-full px-3 py-2 text-xs font-semibold uppercase tracking-[0.2em] shadow ${
+                          className={`flex-1 rounded-sm px-3 py-2 text-xs font-semibold uppercase tracking-[0.2em] shadow ${
                             orbitCameraState
                               ? "bg-teal-400 text-slate-900 hover:bg-teal-300"
                               : "bg-white/10 text-white/60"
@@ -1982,14 +1993,14 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
                 <button
                   type="button"
                   onClick={handleUploadModelClick}
-                  className="rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-white shadow hover:border-teal-300 hover:text-teal-100"
+                  className="rounded-sm border border-white/20 bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-white shadow hover:border-teal-300 hover:text-teal-100"
                 >
                   Upload model
                 </button>
                 <button
                   type="button"
                   onClick={handleReplaceModel}
-                  className="rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-white shadow hover:border-teal-300 hover:text-teal-100"
+                  className="rounded-sm border border-white/20 bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-white shadow hover:border-teal-300 hover:text-teal-100"
                 >
                   Use URL
                 </button>
@@ -2013,16 +2024,17 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
               orbitCameraState={orbitCameraState}
               resetToken={resetCameraToken}
             />
+            {desktopPriceBar}
           </div>
         </div>
       {matrixActive && (
         <div className="fixed inset-0 z-50 flex h-[100dvh] flex-col overflow-hidden bg-black">
           <div className="relative flex-1 min-h-0 w-full">
             {isDesignMode && activeChapter && activeFocusKey && (
-              <div className="absolute left-3 top-3 z-30 w-[300px] space-y-3 rounded-2xl border border-white/15 bg-slate-900/80 p-3 text-white shadow-2xl backdrop-blur">
+              <div className="absolute left-3 top-3 z-30 w-[300px] space-y-3 rounded-sm border border-white/15 bg-slate-900/80 p-3 text-white shadow-2xl backdrop-blur">
                 <div className="flex items-center justify-between text-xs uppercase tracking-[0.25em] text-white/60">
                   <span>Camera</span>
-                  <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] text-teal-100">
+                  <span className="rounded-sm bg-white/10 px-2 py-0.5 text-[10px] text-teal-100">
                     {activeFocusKey}
                   </span>
                 </div>
@@ -2042,14 +2054,14 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
                           }
                           setOrbitEnabled(true);
                         }}
-                        className="rounded-full bg-white/10 px-3 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-white hover:bg-white/20"
+                        className="rounded-sm bg-white/10 px-3 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-white hover:bg-white/20"
                       >
                         Change camera
                       </button>
                       <button
                         type="button"
                         onClick={() => setIsMatrixOpen((prev) => !prev)}
-                        className={`rounded-full border border-teal-300/60 px-3 py-2 text-xs font-semibold uppercase tracking-[0.2em] transition-colors ${
+                        className={`rounded-sm border border-teal-300/60 px-3 py-2 text-xs font-semibold uppercase tracking-[0.2em] transition-colors ${
                           isMatrixOpen
                             ? "bg-teal-400 text-slate-900 border-teal-400"
                             : "text-teal-200 hover:border-teal-300 hover:bg-teal-400/10"
@@ -2072,7 +2084,7 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
                             setOrbitEnabled(false);
                             setResetCameraToken((t) => t + 1);
                           }}
-                          className="flex-1 rounded-full border border-white/20 bg-white/10 px-3 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-white hover:border-teal-300 hover:text-teal-100"
+                          className="flex-1 rounded-sm border border-white/20 bg-white/10 px-3 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-white hover:border-teal-300 hover:text-teal-100"
                         >
                           Reset
                         </button>
@@ -2080,7 +2092,7 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
                           type="button"
                           onClick={handleKeepCurrentView}
                           disabled={!orbitCameraState}
-                          className={`flex-1 rounded-full px-3 py-2 text-xs font-semibold uppercase tracking-[0.2em] shadow ${
+                          className={`flex-1 rounded-sm px-3 py-2 text-xs font-semibold uppercase tracking-[0.2em] shadow ${
                             orbitCameraState
                               ? "bg-teal-400 text-slate-900 hover:bg-teal-300"
                               : "bg-white/10 text-white/60"
@@ -2102,14 +2114,14 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
                 <button
                   type="button"
                   onClick={handleUploadModelClick}
-                  className="rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-white shadow hover:border-teal-300 hover:text-teal-100"
+                  className="rounded-sm border border-white/20 bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-white shadow hover:border-teal-300 hover:text-teal-100"
                 >
                   Upload model
                 </button>
                 <button
                   type="button"
                   onClick={handleReplaceModel}
-                  className="rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-white shadow hover:border-teal-300 hover:text-teal-100"
+                  className="rounded-sm border border-white/20 bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-white shadow hover:border-teal-300 hover:text-teal-100"
                 >
                   Use URL
                 </button>
@@ -2145,7 +2157,7 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
         </div>
       )}
 
-      <div className="md:hidden px-6 pb-28">
+      <div className="md:hidden px-6">
         <ChaptersList {...chaptersListProps} trackFocus />
       </div>
     </div>
@@ -2154,11 +2166,11 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
   return (
     <DndProvider backend={HTML5Backend}>
       <div className={mergedClasses.root}>
-        <div className="fixed left-4 top-4 z-50 flex items-center gap-1 rounded-full border border-white/10 bg-slate-900/80 p-1 text-xs uppercase tracking-[0.3em] text-white/70 shadow-2xl backdrop-blur">
+        <div className="fixed left-4 top-4 z-50 flex items-center gap-1 rounded-sm border border-white/10 bg-slate-900/80 p-1 text-xs uppercase tracking-[0.3em] text-white/70 shadow-2xl backdrop-blur">
           <button
             type="button"
             onClick={() => handleModeChange("design")}
-            className={`rounded-full px-3 py-1.5 transition ${
+            className={`rounded-sm px-3 py-1.5 transition ${
               isDesignMode ? "bg-white text-slate-900 shadow" : "hover:bg-white/10"
             }`}
           >
@@ -2167,7 +2179,7 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
           <button
             type="button"
             onClick={() => handleModeChange("preview")}
-            className={`rounded-full px-3 py-1.5 transition ${
+            className={`rounded-sm px-3 py-1.5 transition ${
               !isDesignMode ? "bg-white text-slate-900 shadow" : "hover:bg-white/10"
             }`}
           >
@@ -2184,13 +2196,13 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
           </main>
           
           {!matrixActive && (
-            <aside className="hidden md:flex w-[400px] shrink-0 flex-col gap-8 p-6 border-l border-white/10 bg-slate-950/50 backdrop-blur-sm">
+            <aside className="hidden md:flex w-1/3 shrink-0 flex-col gap-8 pl-6 bg-slate-950/50 backdrop-blur-sm">
               <ChaptersList {...chaptersListProps} trackFocus />
             </aside>
           )}
         </div>
 
-        {priceBar}
+        {mobilePriceBar}
       </div>
     </DndProvider>
   );

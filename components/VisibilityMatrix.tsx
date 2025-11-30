@@ -61,7 +61,7 @@ export function VisibilityMatrix({
         <h2 className="text-sm font-semibold text-white">Visibility Matrix</h2>
         <button
           onClick={onClose}
-          className="rounded-full border border-white/10 p-1 text-white/60 hover:bg-white/10 hover:text-white"
+          className="rounded-sm border border-white/10 p-1 text-white/60 hover:bg-white/10 hover:text-white"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
