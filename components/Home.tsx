@@ -1029,6 +1029,15 @@ function HomeContent({ config, classNames }: { config: Config; classNames?: Part
       setIsMatrixOpen(false);
     }
   }, []);
+  useEffect(() => {
+    if (!isClient) return;
+    const storedUrl = window.sessionStorage.getItem("droppedModelUrl");
+    if (!storedUrl) return;
+    setSceneModel((prev) => ({ ...prev, src: storedUrl }));
+    setLocalModelUrl(storedUrl);
+    setGltfScene(null);
+    window.sessionStorage.removeItem("droppedModelUrl");
+  }, [isClient]);
   const sidebarModelUrl = useMemo(() => resolveModelUrl(sceneModel.src), [sceneModel.src]);
   const meshTree = useMemo(() => {
     const scene = gltfScene;
