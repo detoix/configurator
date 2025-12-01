@@ -57,13 +57,13 @@ export function PricingMatrix({
   if (!isOpen) return null;
 
   return (
-    <div className={`flex flex-col border-t border-white/10 bg-slate-950/95 backdrop-blur shadow-2xl transition-all ${isOpen ? "flex-1 min-h-0" : "h-0 overflow-hidden border-none"}`}>
+    <div className={`flex flex-col border-t border-[#999999] bg-[#e9e9e9]/95 backdrop-blur shadow-2xl transition-all ${isOpen ? "flex-1 min-h-0" : "h-0 overflow-hidden border-none"}`}>
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-white/10 px-4 py-2 shrink-0">
-        <h2 className="text-sm font-semibold text-white">Pricing Matrix</h2>
+      <div className="flex items-center justify-between border-b border-[#999999] px-4 py-2 shrink-0 bg-[#e9e9e9]">
+        <h2 className="text-sm font-semibold text-[#111111] uppercase tracking-[0.2em]">Pricing Matrix</h2>
         <button
           onClick={onClose}
-          className="rounded-sm border border-white/10 p-1 text-white/60 hover:bg-white/10 hover:text-white"
+          className="rounded-sm border border-[#999999] p-1 text-[#111111] hover:border-[#ff6a3a] hover:text-[#ff6a3a] transition-colors"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -83,15 +83,15 @@ export function PricingMatrix({
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-2 border-b border-white/10 px-4 pt-2 overflow-x-auto">
+      <div className="flex gap-2 border-b border-[#999999] px-4 pt-2 overflow-x-auto bg-[#e9e9e9]">
         {chapters.map((chapter) => (
           <button
             key={chapter.id}
             onClick={() => setActiveChapterId(chapter.id)}
-            className={`border-b-2 px-3 py-1 text-xs font-medium transition-colors whitespace-nowrap ${
+            className={`border-b-2 px-3 py-1 text-xs font-semibold uppercase tracking-wider transition-colors whitespace-nowrap ${
               activeChapter?.id === chapter.id
-                ? "border-teal-400 text-teal-400"
-                : "border-transparent text-white/60 hover:text-white"
+                ? "border-[#ff6a3a] text-[#ff6a3a]"
+                : "border-transparent text-[#111111]/60 hover:text-[#111111]"
             }`}
           >
             {chapter.title || "Untitled"}
@@ -100,23 +100,23 @@ export function PricingMatrix({
       </div>
 
       {/* Matrix Content */}
-      <div className="flex-1 overflow-auto bg-slate-900/50">
+      <div className="flex-1 overflow-auto bg-white/20">
         <table className="w-full border-collapse text-left text-xs">
-          <thead className="sticky top-0 z-10 bg-slate-950 shadow-sm">
+          <thead className="sticky top-0 z-10 bg-[#e9e9e9] shadow-sm">
             <tr>
-              <th className="border-b border-white/10 bg-slate-950 px-3 py-2 font-medium text-white/50 sticky left-0 z-20">
+              <th className="border-b border-[#999999] bg-[#e9e9e9] px-3 py-2 font-semibold text-[#111111]/50 uppercase tracking-wider sticky left-0 z-20">
                 Target Option (Row)
               </th>
               {allOptions.map((colOpt) => (
                 <th
                   key={colOpt.id}
-                  className="min-w-[100px] border-b border-white/10 bg-slate-950 px-3 py-2 font-medium text-white"
+                  className="min-w-[100px] border-b border-[#999999] bg-[#e9e9e9] px-3 py-2 font-medium text-[#111111]"
                 >
                   <div className="flex flex-col">
-                    <span className="text-[9px] uppercase tracking-wider text-white/40">
+                    <span className="text-[9px] uppercase tracking-wider text-[#111111]/40">
                       {colOpt.chapterTitle} - {colOpt.groupTitle}
                     </span>
-                    <span className="truncate max-w-[100px]" title={colOpt.label}>
+                    <span className="truncate max-w-[100px] font-semibold uppercase tracking-wider" title={colOpt.label}>
                       {colOpt.label}
                     </span>
                   </div>
@@ -124,15 +124,15 @@ export function PricingMatrix({
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-white/5">
+          <tbody className="divide-y divide-[#999999]/20">
             {activeChapterOptions.map((rowOpt) => (
-              <tr key={rowOpt.id} className="hover:bg-white/5">
-                <td className="sticky left-0 bg-slate-950/90 px-3 py-2 font-medium text-white border-r border-white/10">
+              <tr key={rowOpt.id} className="hover:bg-white/50 transition-colors">
+                <td className="sticky left-0 bg-[#e9e9e9]/95 px-3 py-2 font-medium text-[#111111] border-r border-[#999999] shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">
                   <div className="flex flex-col">
-                    <span className="text-[9px] uppercase tracking-wider text-white/40">
+                    <span className="text-[9px] uppercase tracking-wider text-[#111111]/40">
                       {rowOpt.groupTitle}
                     </span>
-                    <span>{rowOpt.label}</span>
+                    <span className="font-semibold uppercase tracking-wider">{rowOpt.label}</span>
                   </div>
                 </td>
                 {allOptions.map((colOpt) => {
@@ -150,9 +150,9 @@ export function PricingMatrix({
                   return (
                     <td
                       key={colOpt.id}
-                      className={`px-2 py-1 text-center border-r border-white/5 ${
-                        isDiagonal ? "bg-teal-400/5" : ""
-                      } ${!isEditable ? "bg-white/5 opacity-30 cursor-not-allowed" : ""}`}
+                      className={`px-2 py-1 text-center border-r border-[#999999]/20 ${
+                        isDiagonal ? "bg-[#ff6a3a]/10" : ""
+                      } ${!isEditable ? "bg-[#999999]/10 opacity-30 cursor-not-allowed" : ""}`}
                     >
                       <input
                         type="number"
@@ -167,8 +167,8 @@ export function PricingMatrix({
                           );
                         }}
                         placeholder={isDiagonal ? "Base" : "-"}
-                        className={`w-full bg-transparent text-center text-xs focus:outline-none focus:ring-1 focus:ring-teal-400 rounded py-1 ${
-                          isDiagonal ? "font-bold text-teal-200" : "text-white/80"
+                        className={`w-full bg-transparent text-center text-xs focus:outline-none focus:ring-1 focus:ring-[#ff6a3a] rounded-sm py-1 placeholder-[#111111]/20 ${
+                          isDiagonal ? "font-bold text-[#ff6a3a]" : "text-[#111111]"
                         }`}
                       />
                     </td>

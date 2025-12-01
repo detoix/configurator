@@ -2163,31 +2163,6 @@ function HomeContent({
       {matrixActive && (
         <div className="fixed inset-0 z-50 flex h-[100dvh] flex-col overflow-hidden bg-black">
           <div className="relative flex-1 min-h-0 w-full">
-            {isDesignMode && (
-              <div className="absolute right-3 top-3 z-30 flex gap-2">
-                <button
-                  type="button"
-                  onClick={handleUploadModelClick}
-                  className="rounded-sm border border-[#999999] bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-[#111111] shadow hover:border-[#ff6a3a] hover:text-[#ff6a3a]"
-                >
-                  Upload model
-                </button>
-                <button
-                  type="button"
-                  onClick={handleReplaceModel}
-                  className="rounded-sm border border-[#999999] bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-[#111111] shadow hover:border-[#ff6a3a] hover:text-[#ff6a3a]"
-                >
-                  Use URL
-                </button>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept=".glb,.gltf,model/gltf-binary,model/gltf+json"
-                  className="hidden"
-                  onChange={handleFileInput}
-                />
-              </div>
-            )}
             <ConfiguratorCanvas
               focus={focus}
               modelConfig={sceneModel}
