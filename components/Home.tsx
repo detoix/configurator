@@ -41,6 +41,7 @@ export type ConfiguratorGroup = {
 export type ConfigRadioGroupProps = ConfiguratorGroup & {
   value: string;
   onChange: (value: string) => void;
+  getPrice?: (optionValue: string) => number;
 };
 
 export type FocusTargetConfig = {
@@ -348,7 +349,7 @@ function SingleModel({
   );
 }
 
-function ConfigRadioGroup({ title, helper, options, value, onChange }: ConfigRadioGroupProps) {
+function ConfigRadioGroup({ title, helper, options, value, onChange, getPrice }: ConfigRadioGroupProps) {
   const name = useId();
 
   return (
@@ -360,6 +361,7 @@ function ConfigRadioGroup({ title, helper, options, value, onChange }: ConfigRad
       <div className="mt-5 grid gap-3 md:grid-cols-2">
         {options.map((option) => {
           const id = `${name}-${option.value}`;
+          const displayPrice = getPrice ? getPrice(option.value) : option.price ?? 0;
           return (
             <label
               key={option.value}
@@ -384,7 +386,7 @@ function ConfigRadioGroup({ title, helper, options, value, onChange }: ConfigRad
               </span>
               <span className="text-xs text-[#111111]">{option.description}</span>
               <span className="text-xs font-semibold text-[#ff6a3a]">
-                {currency.format(option.price ?? 0)}
+                {currency.format(displayPrice)}
               </span>
             </label>
           );
@@ -394,7 +396,7 @@ function ConfigRadioGroup({ title, helper, options, value, onChange }: ConfigRad
   );
 }
 
-type OptionDraft = Pick<RadioOption, "label" | "description" | "price">;
+type OptionDraft = Pick<RadioOption, "label" | "description">;
 
 function EditableOptionRow({
   option,
@@ -404,6 +406,7 @@ function EditableOptionRow({
   onDelete,
   onEdit,
   onOpenModel,
+  computedPrice,
 }: {
   option: RadioOption;
   name: string;
@@ -412,19 +415,16 @@ function EditableOptionRow({
   onDelete: () => void;
   onEdit: (next: OptionDraft) => void;
   onOpenModel: () => void;
+  computedPrice: number;
 }) {
   const [isEditing, setIsEditing] = useState(false);
   const [draft, setDraft] = useState<OptionDraft>(() => ({
     label: option.label,
     description: option.description,
-    price: option.price ?? 0,
   }));
 
   const handleSave = () => {
-    onEdit({
-      ...draft,
-      price: Number.isFinite(draft.price) ? draft.price : 0,
-    });
+    onEdit(draft);
     setIsEditing(false);
   };
 
@@ -462,21 +462,16 @@ function EditableOptionRow({
                 }
                 placeholder="Description"
               />
-              <input
-                type="number"
-                className="w-full rounded-sm border border-[#999999] bg-[#e9e9e9] px-3 py-2 text-sm text-[#111111]"
-                value={draft.price}
-                onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                  setDraft((prev) => ({ ...prev, price: parseFloat(e.target.value) || 0 }))
-                }
-                placeholder="Price"
-              />
+              <div className="rounded-sm border border-[#999999] bg-[#f5f5f5] px-3 py-2 text-xs text-[#111111]">
+                <p className="font-semibold text-[#ff6a3a]">{currency.format(computedPrice)}</p>
+                <p className="text-[11px] text-[#555555]">Price is managed in Pricing Matrix.</p>
+              </div>
             </div>
           ) : (
             <div>
               <p className="text-sm font-semibold uppercase tracking-wide text-[#111111]">{option.label}</p>
               <p className="text-xs text-[#111111]">{option.description}</p>
-              <p className="text-xs font-semibold text-[#ff6a3a]">{currency.format(option.price ?? 0)}</p>
+              <p className="text-xs font-semibold text-[#ff6a3a]">{currency.format(computedPrice)}</p>
             </div>
           )}
         </label>
@@ -520,6 +515,7 @@ function EditableConfigGroup({
   onEdit,
   onOpenModel,
   onDeleteGroup,
+  getPrice,
 }: {
   group: ConfiguratorGroup;
   value: string;
@@ -529,6 +525,7 @@ function EditableConfigGroup({
   onEdit: (originalValue: string, next: OptionDraft) => void;
   onOpenModel: (optionValue: string) => void;
   onDeleteGroup: () => void;
+  getPrice: (optionValue: string) => number;
 }) {
   const name = useId();
 
@@ -567,6 +564,7 @@ function EditableConfigGroup({
             onDelete={() => onDelete(option.value)}
             onEdit={(next) => onEdit(option.value, next)}
             onOpenModel={() => onOpenModel(option.value)}
+            computedPrice={getPrice(option.value)}
           />
         ))}
       </div>
@@ -711,6 +709,7 @@ function ChaptersList({
   collapsedChapters,
   toggleCollapse,
   moveChapter,
+  getPrice,
 }: {
   orderedChapters: Config["chapters"];
   mode: "design" | "preview";
@@ -734,6 +733,7 @@ function ChaptersList({
   collapsedChapters: Record<string, boolean>;
   toggleCollapse: (chapterId: string) => void;
   moveChapter?: (from: number, to: number) => void;
+  getPrice: (optionValue: string) => number;
 }) {
   const isDesignMode = mode === "design";
 
@@ -908,6 +908,7 @@ function ChaptersList({
                       onOpenModel(chapter.id, group.id, optionValue)
                     }
                     onDeleteGroup={() => onDeleteGroup(chapter.id, group.id)}
+                    getPrice={getPrice}
                   />
                 ) : (
                   <ConfigRadioGroup
@@ -918,6 +919,7 @@ function ChaptersList({
                     options={group.options}
                     value={selections[group.id]}
                     onChange={(next) => onChangeSelection(group.id, next)}
+                    getPrice={getPrice}
                   />
                 )
               )}
@@ -1342,7 +1344,7 @@ function HomeContent({
       updateGroupOptions(chapterId, groupId, (options) =>
         options.map((opt) =>
           opt.value === originalValue
-            ? { ...opt, label: next.label, description: next.description, price: next.price ?? 0 }
+            ? { ...opt, label: next.label, description: next.description }
             : opt
         )
       );
@@ -1461,6 +1463,11 @@ function HomeContent({
     });
     return total;
   }, [orderedChapters, selections, calculateOptionPrice]);
+
+  const getOptionPrice = useCallback(
+    (optionValue: string) => calculateOptionPrice(optionValue, selections),
+    [calculateOptionPrice, selections]
+  );
 
   const handleUpdatePrice = useCallback(
     (targetId: string, dependencyId: string, price: number | undefined) => {
@@ -1755,6 +1762,7 @@ function HomeContent({
     toggleCollapse: (chapterId: string) =>
       setCollapsedChapters((prev) => ({ ...prev, [chapterId]: !prev[chapterId] })),
     moveChapter,
+    getPrice: getOptionPrice,
   };
 
   const content = (
