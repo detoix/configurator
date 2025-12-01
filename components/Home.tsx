@@ -13,7 +13,7 @@ import {
   type MouseEvent,
   type MutableRefObject,
 } from "react";
-import { MathUtils, Spherical, Vector3, Object3D, Mesh } from "three";
+import { MathUtils, Spherical, Vector3, Object3D, Mesh, PerspectiveCamera } from "three";
 import { OrbitControls, useGLTF } from "@react-three/drei";
 import { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import { DndProvider, useDrag, useDrop } from "react-dnd";
@@ -527,6 +527,7 @@ function EditableConfigGroup({
   onEdit,
   onOpenModel,
   onDeleteGroup,
+  onUpdateGroup,
   getPrice,
   baselinePrice,
 }: {
@@ -538,6 +539,7 @@ function EditableConfigGroup({
   onEdit: (originalValue: string, next: OptionDraft) => void;
   onOpenModel: (optionValue: string) => void;
   onDeleteGroup: () => void;
+  onUpdateGroup: (next: { title: string; helper: string }) => void;
   getPrice: (optionValue: string) => number;
   baselinePrice: number;
 }) {
@@ -545,27 +547,43 @@ function EditableConfigGroup({
 
   return (
     <fieldset className="rounded-sm border border-[#999999] bg-white/5 p-6 backdrop-blur">
-      <div className="flex items-center justify-between">
-        <div>
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex-1 space-y-2">
           <legend className="text-base font-semibold uppercase tracking-[0.3em] text-[#111111]">
-            {group.title}
+            <input
+              className="mt-1 w-full rounded-sm border border-[#999999] bg-[#e9e9e9] px-3 py-2 text-sm text-[#111111]"
+              value={group.title}
+              onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                onUpdateGroup({ title: e.target.value, helper: group.helper })
+              }
+              placeholder="Group title"
+            />
           </legend>
-          <p className="mt-2 text-sm text-[#111111]">{group.helper}</p>
+          <input
+            className="w-full rounded-sm border border-[#999999] bg-[#e9e9e9] px-3 py-2 text-sm text-[#111111]"
+            value={group.helper}
+            onChange={(e: ChangeEvent<HTMLInputElement>) =>
+              onUpdateGroup({ title: group.title, helper: e.target.value })
+            }
+            placeholder="Group subtitle / helper"
+          />
         </div>
-        <button
-          type="button"
-          onClick={onAdd}
-          className="rounded-sm border border-[#ff6a3a]/60 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-[#ff6a3a] hover:border-[#ff6a3a]"
-        >
-          Add
-        </button>
-        <button
-          type="button"
-          onClick={onDeleteGroup}
-          className="rounded-sm border border-red-300/60 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-red-500 hover:border-red-300"
-        >
-          Delete group
-        </button>
+        <div className="flex flex-col gap-2">
+          <button
+            type="button"
+            onClick={onAdd}
+            className="rounded-sm border border-[#ff6a3a]/60 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-[#ff6a3a] hover:border-[#ff6a3a]"
+          >
+            Add option
+          </button>
+          <button
+            type="button"
+            onClick={onDeleteGroup}
+            className="rounded-sm border border-red-300/60 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-red-500 hover:border-red-300"
+          >
+            Delete group
+          </button>
+        </div>
       </div>
       <div className="mt-5 grid gap-3 md:grid-cols-2">
         {group.options.map((option) => (
@@ -598,8 +616,10 @@ function CanvasResizer({ mode, freezeResize = false }: { mode: "design" | "previ
       const { width, height } = parent.getBoundingClientRect();
       if (width > 0 && height > 0) {
         gl.setSize(width, height);
-        camera.aspect = width / height;
-        camera.updateProjectionMatrix();
+        if (camera instanceof PerspectiveCamera) {
+          camera.aspect = width / height;
+          camera.updateProjectionMatrix();
+        }
       }
     };
     const observer = new ResizeObserver(resize);
@@ -739,7 +759,6 @@ function ChaptersList({
   mode,
   mergedClasses,
   chapterRefs,
-  editingChapters,
   chapterDrafts,
   updateChapterDraft,
   startChapterEdit,
@@ -753,6 +772,7 @@ function ChaptersList({
   onEditOption,
   onOpenModel,
   onDeleteGroup,
+  onUpdateGroup,
   trackFocus = false,
   collapsedChapters,
   toggleCollapse,
@@ -766,7 +786,6 @@ function ChaptersList({
   mode: "design" | "preview";
   mergedClasses: HomeClassNames;
   chapterRefs?: MutableRefObject<Record<string, HTMLDivElement | null>>;
-  editingChapters: Record<string, boolean>;
   chapterDrafts: Record<string, Partial<Config["chapters"][number]>>;
   updateChapterDraft: (chapterId: string, field: "kicker" | "title" | "description", value: string) => void;
   startChapterEdit: (chapterId: string, chapter: Config["chapters"][number]) => void;
@@ -780,6 +799,14 @@ function ChaptersList({
   onEditOption: (chapterId: string, groupId: string, originalValue: string, next: OptionDraft) => void;
   onOpenModel: (chapterId: string, groupId: string, optionValue: string) => void;
   onDeleteGroup: (chapterId: string, groupId: string) => void;
+  onUpdateGroup: (
+    chapterId: string,
+    groupId: string,
+    next: {
+      title: string;
+      helper: string;
+    }
+  ) => void;
   trackFocus?: boolean;
   collapsedChapters: Record<string, boolean>;
   toggleCollapse: (chapterId: string) => void;
@@ -811,138 +838,77 @@ function ChaptersList({
             <header className={`${mergedClasses.chapterHeader} flex flex-col gap-3`}>
               <div className="flex items-start justify-between gap-3">
                 <div className="flex-1 space-y-2">
-                  {editingChapters[chapter.id] ? (
-                    <>
-                      <input
-                        className="w-full rounded-sm border border-[#999999] bg-[#e9e9e9] px-3 py-2 text-sm text-[#111111]"
-                        value={(chapterDrafts[chapter.id]?.kicker as string | undefined) ?? chapter.kicker}
-                        onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                          updateChapterDraft(chapter.id, "kicker", e.target.value)
-                        }
-                        placeholder="Kicker"
-                      />
-                      <input
-                        className="w-full rounded-sm border border-[#999999] bg-[#e9e9e9] px-3 py-2 text-lg font-semibold text-[#111111]"
-                        value={(chapterDrafts[chapter.id]?.title as string | undefined) ?? chapter.title}
-                        onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                          updateChapterDraft(chapter.id, "title", e.target.value)
-                        }
-                        placeholder="Title"
-                      />
-                      <textarea
-                        className="w-full rounded-sm border border-[#999999] bg-[#e9e9e9] px-3 py-2 text-sm text-[#111111]"
-                        value={
-                          (chapterDrafts[chapter.id]?.description as string | undefined) ?? chapter.description
-                        }
-                        onChange={(e: ChangeEvent<HTMLTextAreaElement>) =>
-                          updateChapterDraft(chapter.id, "description", e.target.value)
-                        }
-                        placeholder="Description"
-                        rows={3}
-                      />
-                    </>
-                  ) : (
-                    <>
-                      <p className={mergedClasses.chapterKicker}>{chapter.kicker}</p>
-                      <h2 className={mergedClasses.chapterTitle}>{chapter.title}</h2>
-                      <p className={mergedClasses.chapterDescription}>{chapter.description}</p>
-                    </>
-                  )}
+                  <input
+                    className="w-full rounded-sm border border-[#999999] bg-[#e9e9e9] px-3 py-2 text-[11px] uppercase tracking-[0.3em] text-[#111111]"
+                    value={chapter.kicker}
+                    onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                      updateChapterDraft(chapter.id, "kicker", e.target.value)
+                    }
+                    placeholder="Kicker"
+                  />
+                  <input
+                    className="w-full rounded-sm border border-[#999999] bg-[#e9e9e9] px-3 py-2 text-lg font-semibold text-[#111111]"
+                    value={chapter.title}
+                    onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                      updateChapterDraft(chapter.id, "title", e.target.value)
+                    }
+                    placeholder="Title"
+                  />
+                  <textarea
+                    className="w-full rounded-sm border border-[#999999] bg-[#e9e9e9] px-3 py-2 text-sm text-[#111111]"
+                    value={chapter.description}
+                    onChange={(e: ChangeEvent<HTMLTextAreaElement>) =>
+                      updateChapterDraft(chapter.id, "description", e.target.value)
+                    }
+                    placeholder="Description"
+                    rows={3}
+                  />
                 </div>
                 <div className="flex flex-col gap-2 items-end">
-                  {editingChapters[chapter.id] ? (
-                    <>
-                      <div className="flex gap-2">
+                  <div className="flex gap-2">
+                    {moveChapter && (
+                      <div className="flex gap-1">
                         <button
                           type="button"
+                          disabled={index === 0}
                           onClick={(e) => {
                             e.stopPropagation();
-                            saveChapterEdit(chapter.id);
+                            moveChapter(index, index - 1);
                           }}
-                          className="rounded-sm bg-[#ff6a3a] px-3 py-1 text-xs font-semibold text-[#111111]"
+                          className="rounded p-1 hover:bg-white/10 disabled:opacity-30 text-[#111111]"
+                          title="Move Up"
                         >
-                          Save
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                            <path d="M12 19V5M5 12l7-7 7 7" />
+                          </svg>
                         </button>
                         <button
                           type="button"
+                          disabled={index === orderedChapters.length - 1}
                           onClick={(e) => {
                             e.stopPropagation();
-                            cancelChapterEdit(chapter.id);
+                            moveChapter(index, index + 1);
                           }}
-                          className="rounded-sm border border-[#999999] px-3 py-1 text-xs text-[#111111] hover:border-[#ff6a3a]"
+                          className="rounded p-1 hover:bg-white/10 disabled:opacity-30 text-[#111111]"
+                          title="Move Down"
                         >
-                          Cancel
-                        </button>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onDeleteChapter(chapter.id);
-                        }}
-                        className="rounded-sm border border-red-300 px-3 py-1 text-xs font-semibold text-red-500 hover:border-red-400"
-                      >
-                        Delete chapter
-                      </button>
-                    </>
-                  ) : (
-                    <>
-                      <div className="flex gap-2">
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            startChapterEdit(chapter.id, chapter);
-                          }}
-                          className="rounded-sm border border-[#999999] px-3 py-1 text-xs text-[#111111] hover:border-[#ff6a3a]"
-                        >
-                          Edit
-                        </button>
-                        {moveChapter && (
-                          <div className="flex gap-1">
-                            <button
-                              type="button"
-                              disabled={index === 0}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                moveChapter(index, index - 1);
-                              }}
-                              className="rounded p-1 hover:bg-white/10 disabled:opacity-30 text-[#111111]"
-                              title="Move Up"
-                            >
-                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                                <path d="M12 19V5M5 12l7-7 7 7" />
-                              </svg>
-                            </button>
-                            <button
-                              type="button"
-                              disabled={index === orderedChapters.length - 1}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                moveChapter(index, index + 1);
-                              }}
-                              className="rounded p-1 hover:bg-white/10 disabled:opacity-30 text-[#111111]"
-                              title="Move Down"
-                            >
-                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                                <path d="M12 5v14M5 12l7 7 7-7" />
-                              </svg>
-                            </button>
-                          </div>
-                        )}
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onDeleteChapter(chapter.id);
-                          }}
-                          className="rounded-sm border border-red-300 px-3 py-1 text-xs font-semibold text-red-500 hover:border-red-400"
-                        >
-                          Delete
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                            <path d="M12 5v14M5 12l7 7 7-7" />
+                          </svg>
                         </button>
                       </div>
-                    </>
-                  )}
+                    )}
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onDeleteChapter(chapter.id);
+                      }}
+                      className="rounded-sm border border-red-300 px-3 py-1 text-xs font-semibold text-red-500 hover:border-red-400"
+                    >
+                      Delete chapter
+                    </button>
+                  </div>
                   <button
                     type="button"
                     onClick={(e) => {
@@ -982,6 +948,7 @@ function ChaptersList({
                       onOpenModel(chapter.id, group.id, optionValue)
                     }
                     onDeleteGroup={() => onDeleteGroup(chapter.id, group.id)}
+                    onUpdateGroup={(next) => onUpdateGroup(chapter.id, group.id, next)}
                     getPrice={getPrice}
                     baselinePrice={getBaseline(group.id)}
                   />
@@ -1119,8 +1086,6 @@ function HomeContent({
   const [editingChapters, setEditingChapters] = useState<Record<string, boolean>>({});
   const [heroDraft, setHeroDraft] = useState(hero);
   const [closingDraft, setClosingDraft] = useState(closing);
-  const [isEditingHero, setIsEditingHero] = useState(false);
-  const [isEditingClosing, setIsEditingClosing] = useState(false);
   const [optionModelTarget, setOptionModelTarget] = useState<{
     chapterId: string;
     groupId: string;
@@ -1349,62 +1314,51 @@ function HomeContent({
     [updateGroupOptions]
   );
 
-  const startChapterEdit = useCallback((chapterId: string, chapter: Config["chapters"][number]) => {
-    setEditingChapters((prev) => ({ ...prev, [chapterId]: true }));
-    setChapterDrafts((prev) => ({
-      ...prev,
-      [chapterId]: {
-        kicker: chapter.kicker,
-        title: chapter.title,
-        description: chapter.description,
-      },
-    }));
-  }, []);
-
-  const cancelChapterEdit = useCallback((chapterId: string) => {
-    setEditingChapters((prev) => ({ ...prev, [chapterId]: false }));
-    setChapterDrafts((prev) => {
-      const next = { ...prev };
-      delete next[chapterId];
-      return next;
-    });
-  }, []);
-
-  const updateChapterDraft = useCallback(
-    (chapterId: string, field: "kicker" | "title" | "description", value: string) => {
-      setChapterDrafts((prev) => ({
-        ...prev,
-        [chapterId]: { ...prev[chapterId], [field]: value },
-      }));
-    },
-    []
-  );
-
-  const saveChapterEdit = useCallback(
-    (chapterId: string) => {
-      const draft = chapterDrafts[chapterId];
-      if (!draft) return;
+  const handleUpdateGroup = useCallback(
+    (chapterId: string, groupId: string, next: { title: string; helper: string }) => {
       setChapters((prev) =>
         prev.map((chapter) =>
           chapter.id === chapterId
             ? {
                 ...chapter,
-                kicker: draft.kicker ?? chapter.kicker,
-                title: draft.title ?? chapter.title,
-                description: draft.description ?? chapter.description,
+                groups: chapter.groups.map((group) =>
+                  group.id === groupId ? { ...group, title: next.title, helper: next.helper } : group
+                ),
               }
             : chapter
         )
       );
-      setEditingChapters((prev) => ({ ...prev, [chapterId]: false }));
-      setChapterDrafts((prev) => {
-        const next = { ...prev };
-        delete next[chapterId];
-        return next;
-      });
     },
-    [chapterDrafts]
+    []
   );
+
+  const startChapterEdit = useCallback((chapterId: string, chapter: Config["chapters"][number]) => {
+    // no-op now that chapters are edited inline
+  }, []);
+
+  const cancelChapterEdit = useCallback((chapterId: string) => {
+    // no-op
+  }, []);
+
+  const updateChapterDraft = useCallback(
+    (chapterId: string, field: "kicker" | "title" | "description", value: string) => {
+      setChapters((prev) =>
+        prev.map((chapter) =>
+          chapter.id === chapterId
+            ? {
+                ...chapter,
+                [field]: value,
+              }
+            : chapter
+        )
+      );
+    },
+    []
+  );
+
+  const saveChapterEdit = useCallback((chapterId: string) => {
+    // no-op
+  }, []);
 
   const handleDeleteOption = useCallback(
     (chapterId: string, groupId: string, optionValue: string) => {
@@ -1853,7 +1807,6 @@ function HomeContent({
     mode,
     mergedClasses,
     chapterRefs,
-    editingChapters,
     chapterDrafts,
     updateChapterDraft,
     startChapterEdit,
@@ -1871,6 +1824,7 @@ function HomeContent({
     onEditOption: handleEditOption,
     onOpenModel: openOptionModelEditor,
     onDeleteGroup: handleDeleteGroup,
+    onUpdateGroup: handleUpdateGroup,
     collapsedChapters,
     toggleCollapse: (chapterId: string) =>
       setCollapsedChapters((prev) => ({ ...prev, [chapterId]: !prev[chapterId] })),
@@ -1906,115 +1860,81 @@ function HomeContent({
         </div>
       )}
       <section className={`${mergedClasses.heroSection}  overflow-auto pr-2`}>
-          {isDesignMode && isEditingHero ? (
-            <div className="space-y-3 rounded-sm border border-[#999999] bg-white/5 p-4">
-              <input
-                className="w-full rounded-sm border border-[#999999] bg-[#e9e9e9] px-3 py-2 text-sm uppercase tracking-[0.4em] text-[#111111]"
-                value={heroDraft.kicker}
-                onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                  setHeroDraft((prev) => ({ ...prev, kicker: e.target.value }))
+        {isDesignMode ? (
+          <div className="space-y-3 rounded-sm border border-[#999999] bg-white/5 p-4">
+            <input
+              className="w-full rounded-sm border border-[#999999] bg-[#e9e9e9] px-3 py-2 text-sm uppercase tracking-[0.4em] text-[#111111]"
+              value={hero.kicker}
+              onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                setHero((prev) => ({ ...prev, kicker: e.target.value }))
+              }
+              placeholder="Kicker"
+            />
+            <input
+              className="w-full rounded-sm border border-[#999999] bg-[#e9e9e9] px-3 py-2 text-3xl font-semibold text-[#111111]"
+              value={hero.title}
+              onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                setHero((prev) => ({ ...prev, title: e.target.value }))
+              }
+              placeholder="Title"
+            />
+            <div className="space-y-2">
+              {hero.paragraphs.map((paragraph, index) => (
+                <div key={index} className="flex items-start gap-2">
+                  <textarea
+                    className="w-full rounded-sm border border-[#999999] bg-[#e9e9e9] px-3 py-2 text-sm text-[#111111]"
+                    value={paragraph}
+                    onChange={(e: ChangeEvent<HTMLTextAreaElement>) =>
+                      setHero((prev) => {
+                        const next = [...prev.paragraphs];
+                        next[index] = e.target.value;
+                        return { ...prev, paragraphs: next };
+                      })
+                    }
+                    rows={2}
+                  />
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setHero((prev) => ({
+                        ...prev,
+                        paragraphs: prev.paragraphs.filter((_, i) => i !== index),
+                      }))
+                    }
+                    className="rounded-sm border border-[#999999] px-3 py-1 text-xs text-[#111111] hover:border-red-300 hover:text-red-200"
+                  >
+                    Delete
+                  </button>
+                </div>
+              ))}
+              <button
+                type="button"
+                onClick={() =>
+                  setHero((prev) => ({ ...prev, paragraphs: [...prev.paragraphs, ""] }))
                 }
-                placeholder="Kicker"
-              />
-              <input
-                className="w-full rounded-sm border border-[#999999] bg-[#e9e9e9] px-3 py-2 text-3xl font-semibold text-[#111111]"
-                value={heroDraft.title}
-                onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                  setHeroDraft((prev) => ({ ...prev, title: e.target.value }))
-                }
-                placeholder="Title"
-              />
-              <div className="space-y-2">
-                {heroDraft.paragraphs.map((paragraph, index) => (
-                  <div key={index} className="flex items-start gap-2">
-                    <textarea
-                      className="w-full rounded-sm border border-[#999999] bg-[#e9e9e9] px-3 py-2 text-sm text-[#111111]"
-                      value={paragraph}
-                      onChange={(e: ChangeEvent<HTMLTextAreaElement>) =>
-                        setHeroDraft((prev) => {
-                          const next = [...prev.paragraphs];
-                          next[index] = e.target.value;
-                          return { ...prev, paragraphs: next };
-                        })
-                      }
-                      rows={2}
-                    />
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setHeroDraft((prev) => ({
-                          ...prev,
-                          paragraphs: prev.paragraphs.filter((_, i) => i !== index),
-                        }))
-                      }
-                      className="rounded-sm border border-[#999999] px-3 py-1 text-xs text-[#111111] hover:border-red-300 hover:text-red-200"
-                    >
-                      Delete
-                    </button>
-                  </div>
-                ))}
-                <button
-                  type="button"
-                  onClick={() =>
-                    setHeroDraft((prev) => ({ ...prev, paragraphs: [...prev.paragraphs, ""] }))
-                  }
-                  className="rounded-sm border border-[#ff6a3a]/60 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-[#ff6a3a] hover:border-[#ff6a3a]"
-                >
-                  Add paragraph
-                </button>
-              </div>
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setHero(heroDraft);
-                    setIsEditingHero(false);
-                  }}
-                  className="rounded-sm bg-[#ff6a3a] px-4 py-2 text-xs font-semibold text-[#111111]"
-                >
-                  Save
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setHeroDraft(hero);
-                    setIsEditingHero(false);
-                  }}
-                  className="rounded-sm border border-[#999999] px-4 py-2 text-xs text-[#111111] hover:border-[#999999]"
-                >
-                  Cancel
-                </button>
+                className="rounded-sm border border-[#ff6a3a]/60 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-[#ff6a3a] hover:border-[#ff6a3a]"
+              >
+                Add paragraph
+              </button>
+            </div>
+          </div>
+        ) : (
+          <>
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex-1 space-y-2">
+                <p className={mergedClasses.heroKicker}>{hero.kicker}</p>
+                <h1 className={mergedClasses.heroTitle}>{hero.title}</h1>
               </div>
             </div>
-          ) : (
-              <>
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex-1 space-y-2">
-                    <p className={mergedClasses.heroKicker}>{hero.kicker}</p>
-                    <h1 className={mergedClasses.heroTitle}>{hero.title}</h1>
-                  </div>
-                  {isDesignMode && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setHeroDraft(hero);
-                        setIsEditingHero(true);
-                      }}
-                      className="rounded-sm border border-[#999999] px-3 py-1 text-xs text-[#111111] hover:border-[#999999]"
-                    >
-                      Edit
-                    </button>
-                  )}
-                </div>
-                <div className="space-y-2">
-                {hero.paragraphs.map((paragraph, index) => (
-                  <p key={index} className={mergedClasses.heroParagraph}>
-                    {paragraph}
-                  </p>
-                ))}
-              </div>
-            </>
-          )}
+            <div className="space-y-2">
+              {hero.paragraphs.map((paragraph, index) => (
+                <p key={index} className={mergedClasses.heroParagraph}>
+                  {paragraph}
+                </p>
+              ))}
+            </div>
+          </>
+        )}
         </section>
 
         <div
@@ -2160,7 +2080,39 @@ function HomeContent({
             {desktopPriceBar}
           </div>
         </div>
-      {matrixActive && (
+      
+
+      <div className="md:hidden px-6">
+        <ChaptersList {...chaptersListProps} trackFocus />
+      </div>
+    </div>
+  );
+
+  return (
+    <DndProvider backend={HTML5Backend}>
+      <div
+        className={mergedClasses.root}
+        style={{
+          backgroundImage: "url('/shape-9.87b97093.webp')",
+          backgroundPosition: "center",
+          backgroundRepeat: "no-repeat",
+          backgroundSize: "cover",
+        }}
+      >
+        {isClient && gltfScene === null && (
+          <GltfSceneLoader url={sidebarModelUrl} onLoaded={(scene) => setGltfScene(scene)} />
+        )}
+        
+        <div className="flex flex-col md:flex-row">
+          <main className="flex-1 md:h-screen md:sticky md:top-0 md:overflow-y-auto no-scrollbar">
+            {content}
+          </main>
+          <aside className="hidden md:flex w-1/3 shrink-0 flex-col gap-8 pl-6 bg-[#e9e9e9] backdrop-blur-sm">
+            <ChaptersList {...chaptersListProps} trackFocus />
+          </aside>
+        </div>
+
+        {matrixActive && (
         <div className="fixed inset-0 z-50 flex h-[100dvh] flex-col overflow-hidden bg-black">
           <div className="relative flex-1 min-h-0 w-full">
             <ConfiguratorCanvas
@@ -2193,39 +2145,6 @@ function HomeContent({
           />
         </div>
       )}
-
-      <div className="md:hidden px-6">
-        <ChaptersList {...chaptersListProps} trackFocus />
-      </div>
-    </div>
-  );
-
-  return (
-    <DndProvider backend={HTML5Backend}>
-      <div
-        className={mergedClasses.root}
-        style={{
-          backgroundImage: "url('/shape-9.87b97093.webp')",
-          backgroundPosition: "center",
-          backgroundRepeat: "no-repeat",
-          backgroundSize: "cover",
-        }}
-      >
-        {isClient && gltfScene === null && (
-          <GltfSceneLoader url={sidebarModelUrl} onLoaded={(scene) => setGltfScene(scene)} />
-        )}
-        
-        <div className="flex flex-col md:flex-row">
-          <main className="flex-1 md:h-screen md:sticky md:top-0 md:overflow-y-auto no-scrollbar">
-            {content}
-          </main>
-          
-          {!matrixActive && (
-            <aside className="hidden md:flex w-1/3 shrink-0 flex-col gap-8 pl-6 bg-[#e9e9e9] backdrop-blur-sm">
-              <ChaptersList {...chaptersListProps} trackFocus />
-            </aside>
-          )}
-        </div>
 
         {mobilePriceBar}
         {isEmbedOpen && (
