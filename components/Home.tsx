@@ -42,6 +42,7 @@ export type ConfigRadioGroupProps = ConfiguratorGroup & {
   value: string;
   onChange: (value: string) => void;
   getPrice?: (optionValue: string) => number;
+  baselinePrice?: number;
 };
 
 export type FocusTargetConfig = {
@@ -349,7 +350,7 @@ function SingleModel({
   );
 }
 
-function ConfigRadioGroup({ title, helper, options, value, onChange, getPrice }: ConfigRadioGroupProps) {
+function ConfigRadioGroup({ title, helper, options, value, onChange, getPrice, baselinePrice = 0 }: ConfigRadioGroupProps) {
   const name = useId();
 
   return (
@@ -362,6 +363,7 @@ function ConfigRadioGroup({ title, helper, options, value, onChange, getPrice }:
         {options.map((option) => {
           const id = `${name}-${option.value}`;
           const displayPrice = getPrice ? getPrice(option.value) : option.price ?? 0;
+          const diff = displayPrice - baselinePrice;
           return (
             <label
               key={option.value}
@@ -386,7 +388,7 @@ function ConfigRadioGroup({ title, helper, options, value, onChange, getPrice }:
               </span>
               <span className="text-xs text-[#111111]">{option.description}</span>
               <span className="text-xs font-semibold text-[#ff6a3a]">
-                {currency.format(displayPrice)}
+                {diff <= 0 ? "Included" : `+${currency.format(diff)}`}
               </span>
             </label>
           );
@@ -407,6 +409,7 @@ function EditableOptionRow({
   onEdit,
   onOpenModel,
   computedPrice,
+  baselinePrice,
 }: {
   option: RadioOption;
   name: string;
@@ -416,6 +419,7 @@ function EditableOptionRow({
   onEdit: (next: OptionDraft) => void;
   onOpenModel: () => void;
   computedPrice: number;
+  baselinePrice: number;
 }) {
   const [isEditing, setIsEditing] = useState(false);
   const [draft, setDraft] = useState<OptionDraft>(() => ({
@@ -463,7 +467,11 @@ function EditableOptionRow({
                 placeholder="Description"
               />
               <div className="rounded-sm border border-[#999999] bg-[#f5f5f5] px-3 py-2 text-xs text-[#111111]">
-                <p className="font-semibold text-[#ff6a3a]">{currency.format(computedPrice)}</p>
+                <p className="font-semibold text-[#ff6a3a]">
+                  {computedPrice - baselinePrice <= 0
+                    ? "Included"
+                    : `+${currency.format(computedPrice - baselinePrice)}`}
+                </p>
                 <p className="text-[11px] text-[#555555]">Price is managed in Pricing Matrix.</p>
               </div>
             </div>
@@ -471,7 +479,11 @@ function EditableOptionRow({
             <div>
               <p className="text-sm font-semibold uppercase tracking-wide text-[#111111]">{option.label}</p>
               <p className="text-xs text-[#111111]">{option.description}</p>
-              <p className="text-xs font-semibold text-[#ff6a3a]">{currency.format(computedPrice)}</p>
+              <p className="text-xs font-semibold text-[#ff6a3a]">
+                {computedPrice - baselinePrice <= 0
+                  ? "Included"
+                  : `+${currency.format(computedPrice - baselinePrice)}`}
+              </p>
             </div>
           )}
         </label>
@@ -516,6 +528,7 @@ function EditableConfigGroup({
   onOpenModel,
   onDeleteGroup,
   getPrice,
+  baselinePrice,
 }: {
   group: ConfiguratorGroup;
   value: string;
@@ -526,6 +539,7 @@ function EditableConfigGroup({
   onOpenModel: (optionValue: string) => void;
   onDeleteGroup: () => void;
   getPrice: (optionValue: string) => number;
+  baselinePrice: number;
 }) {
   const name = useId();
 
@@ -564,12 +578,41 @@ function EditableConfigGroup({
             onDelete={() => onDelete(option.value)}
             onEdit={(next) => onEdit(option.value, next)}
             onOpenModel={() => onOpenModel(option.value)}
+            baselinePrice={baselinePrice}
             computedPrice={getPrice(option.value)}
           />
         ))}
       </div>
     </fieldset>
   );
+}
+
+function CanvasResizer({ mode, freezeResize = false }: { mode: "design" | "preview"; freezeResize?: boolean }) {
+  const { gl, camera } = useThree();
+
+  useEffect(() => {
+    if (freezeResize) return;
+    const parent = gl?.domElement?.parentElement;
+    if (!parent || typeof ResizeObserver === "undefined") return;
+    const resize = () => {
+      const { width, height } = parent.getBoundingClientRect();
+      if (width > 0 && height > 0) {
+        gl.setSize(width, height);
+        camera.aspect = width / height;
+        camera.updateProjectionMatrix();
+      }
+    };
+    const observer = new ResizeObserver(resize);
+    observer.observe(parent);
+    resize();
+    const raf = requestAnimationFrame(resize);
+    return () => {
+      observer.disconnect();
+      cancelAnimationFrame(raf);
+    };
+  }, [camera, gl, mode, freezeResize]);
+
+  return null;
 }
 
 function ConfiguratorCanvas({
@@ -582,6 +625,8 @@ function ConfiguratorCanvas({
   onOrbitCameraChange,
   orbitCameraState,
   resetToken,
+  mode,
+  freezeResize = false,
 }: {
   focus: SceneFocus;
   modelConfig: SceneModelConfig;
@@ -592,6 +637,8 @@ function ConfiguratorCanvas({
   onOrbitCameraChange: (state: { position: [number, number, number]; target: [number, number, number] }) => void;
   orbitCameraState: { position: [number, number, number]; target: [number, number, number] } | null;
   resetToken: number;
+  mode: "design" | "preview";
+  freezeResize?: boolean;
 }) {
   const controlsRef = useRef<OrbitControlsImpl | null>(null);
 
@@ -610,6 +657,7 @@ function ConfiguratorCanvas({
   if (!gltfScene) return null;
   return (
     <Canvas shadows camera={{ position: [4, 3, 6], fov: 50 }}>
+      <CanvasResizer mode={mode} freezeResize={freezeResize} />
       <color attach="background" args={["#e9e9e9"]} />
       <ambientLight intensity={0.7} />
       <directionalLight
@@ -712,6 +760,7 @@ function ChaptersList({
   getPrice,
   onAddChapter,
   onDeleteChapter,
+  getBaseline,
 }: {
   orderedChapters: Config["chapters"];
   mode: "design" | "preview";
@@ -738,6 +787,7 @@ function ChaptersList({
   getPrice: (optionValue: string) => number;
   onAddChapter: () => void;
   onDeleteChapter: (chapterId: string) => void;
+  getBaseline: (groupId: string) => number;
 }) {
   const isDesignMode = mode === "design";
 
@@ -933,6 +983,7 @@ function ChaptersList({
                     }
                     onDeleteGroup={() => onDeleteGroup(chapter.id, group.id)}
                     getPrice={getPrice}
+                    baselinePrice={getBaseline(group.id)}
                   />
                 ) : (
                   <ConfigRadioGroup
@@ -944,6 +995,7 @@ function ChaptersList({
                     value={selections[group.id]}
                     onChange={(next) => onChangeSelection(group.id, next)}
                     getPrice={getPrice}
+                    baselinePrice={getBaseline(group.id)}
                   />
                 )
               )}
@@ -1504,6 +1556,21 @@ function HomeContent({
     [calculateOptionPrice, selections]
   );
 
+  const groupBaselines = useMemo(() => {
+    const map: Record<string, number> = {};
+    chapters.forEach((chapter) => {
+      chapter.groups.forEach((group) => {
+        let min = Number.POSITIVE_INFINITY;
+        group.options.forEach((opt) => {
+          const price = calculateOptionPrice(opt.value, selections);
+          if (price < min) min = price;
+        });
+        map[group.id] = Number.isFinite(min) ? min : 0;
+      });
+    });
+    return map;
+  }, [chapters, calculateOptionPrice, selections]);
+
   const handleUpdatePrice = useCallback(
     (targetId: string, dependencyId: string, price: number | undefined) => {
       setPricingRules((prev) => {
@@ -1811,6 +1878,7 @@ function HomeContent({
     getPrice: getOptionPrice,
     onAddChapter: addChapter,
     onDeleteChapter: deleteChapter,
+    getBaseline: (groupId: string) => groupBaselines[groupId] ?? 0,
   };
 
   const content = (
@@ -2086,6 +2154,8 @@ function HomeContent({
               onOrbitCameraChange={setOrbitCameraState}
               orbitCameraState={orbitCameraState}
               resetToken={resetCameraToken}
+              mode={mode}
+              freezeResize={matrixActive}
             />
             {desktopPriceBar}
           </div>
@@ -2093,85 +2163,6 @@ function HomeContent({
       {matrixActive && (
         <div className="fixed inset-0 z-50 flex h-[100dvh] flex-col overflow-hidden bg-black">
           <div className="relative flex-1 min-h-0 w-full">
-            {isDesignMode && activeChapter && activeFocusKey && (
-              <div className="absolute left-3 top-3 z-30 w-[300px] space-y-3 rounded-sm border border-[#999999] bg-[#e9e9e9] p-3 text-[#111111] shadow-2xl backdrop-blur">
-                <div className="flex items-center justify-between text-xs uppercase tracking-[0.25em] text-[#111111]/60">
-                  <span>Camera</span>
-                  <span className="rounded-sm bg-white/10 px-2 py-0.5 text-[10px] text-[#ff6a3a]">
-                    {activeFocusKey}
-                  </span>
-                </div>
-                <div className="flex flex-col gap-2 text-sm text-[#111111]/80">
-                  {!orbitEnabled && (
-                    <>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const snapshot =
-                            orbitCameraState ?? preOrbitCameraState ?? deriveCameraFromFocus(activeFocusKey);
-                          if (snapshot) {
-                            setOrbitCameraState(snapshot);
-                            setPreOrbitCameraState(snapshot);
-                          } else {
-                            setPreOrbitCameraState(null);
-                          }
-                          setOrbitEnabled(true);
-                        }}
-                        className="rounded-sm border border-[#ff6a3a] px-3 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-[#ff6a3a] hover:bg-[#ff6a3a] hover:text-[#111111]"
-                      >
-                        Change camera
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setIsMatrixOpen((prev) => !prev)}
-                        className={`rounded-sm border border-[#ff6a3a] px-3 py-2 text-xs font-semibold uppercase tracking-[0.2em] transition-colors ${
-                          isMatrixOpen
-                            ? "bg-[#ff6a3a] text-[#111111] border-[#ff6a3a]"
-                            : "text-[#ff6a3a] hover:border-[#ff6a3a] hover:bg-[#ff6a3a]/10"
-                        }`}
-                      >
-                        {isMatrixOpen ? "Close Model" : "Model"}
-                      </button>
-                    </>
-                  )}
-                  {orbitEnabled && (
-                    <div className="space-y-2">
-                      <p className="text-[11px] text-[#111111]/60">Use orbit to frame the shot.</p>
-                      <div className="flex gap-2">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const snapshot =
-                              preOrbitCameraState ?? deriveCameraFromFocus(activeFocusKey) ?? orbitCameraState;
-                            setOrbitCameraState(snapshot);
-                            setOrbitEnabled(false);
-                            setResetCameraToken((t) => t + 1);
-                          }}
-                          className="flex-1 rounded-sm border border-[#999999] bg-white/10 px-3 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-[#111111] hover:border-[#ff6a3a] hover:text-[#ff6a3a]"
-                        >
-                          Reset
-                        </button>
-                        <button
-                          type="button"
-                          onClick={handleKeepCurrentView}
-                          disabled={!orbitCameraState}
-                          className={`flex-1 rounded-sm px-3 py-2 text-xs font-semibold uppercase tracking-[0.2em] shadow ${
-                            orbitCameraState
-                              ? "bg-[#ff6a3a] text-[#111111] hover:bg-[#ff6a3a]"
-                              : "bg-white/10 text-[#111111]/60"
-                          }`}
-                        >
-                          Keep this view
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-                <p className="text-[11px] text-[#111111]/50">
-                  Stored for <span className="font-semibold text-[#111111]">{activeChapter.title}</span>.
-                </p>
-              </div>
-            )}
             {isDesignMode && (
               <div className="absolute right-3 top-3 z-30 flex gap-2">
                 <button
@@ -2207,6 +2198,8 @@ function HomeContent({
               onOrbitCameraChange={setOrbitCameraState}
               orbitCameraState={orbitCameraState}
               resetToken={resetCameraToken}
+              mode={mode}
+              freezeResize={isMatrixOpen}
             />
           </div>
           <VisibilityMatrix
