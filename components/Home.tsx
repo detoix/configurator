@@ -408,6 +408,8 @@ function EditableOptionRow({
   onDelete,
   onEdit,
   onOpenModel,
+  selectedMesh,
+  onToggleMeshVisibility,
   computedPrice,
   baselinePrice,
 }: {
@@ -418,6 +420,8 @@ function EditableOptionRow({
   onDelete: () => void;
   onEdit: (next: OptionDraft) => void;
   onOpenModel: () => void;
+  selectedMesh?: string | null;
+  onToggleMeshVisibility?: (meshName: string, visible: boolean) => void;
   computedPrice: number;
   baselinePrice: number;
 }) {
@@ -487,7 +491,30 @@ function EditableOptionRow({
             </div>
           )}
         </label>
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-2 items-end">
+          {selectedMesh && onToggleMeshVisibility && (
+            <label className="flex items-center gap-1 text-[10px] uppercase tracking-[0.15em] text-[#111111]/70">
+              <span>Mesh</span>
+              <span className="max-w-[120px] truncate font-mono text-[9px] text-[#111111]/60">
+                {selectedMesh}
+              </span>
+              <div className="relative inline-flex h-4 w-7 shrink-0 items-center rounded-full bg-[#ff6a3a]/40">
+                <input
+                  type="checkbox"
+                  className="sr-only"
+                  checked={option.visibility?.[selectedMesh] !== false}
+                  onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                    onToggleMeshVisibility(selectedMesh, e.target.checked)
+                  }
+                />
+                <span
+                  className={`inline-block h-3 w-3 transform rounded-full bg-white shadow-sm transition-transform ${
+                    option.visibility?.[selectedMesh] === false ? "translate-x-1" : "translate-x-3.5"
+                  }`}
+                />
+              </div>
+            </label>
+          )}
           {isEditing ? (
             <button
               type="button"
@@ -528,6 +555,8 @@ function EditableConfigGroup({
   onOpenModel,
   onDeleteGroup,
   onUpdateGroup,
+  selectedMesh,
+  onUpdateMeshVisibility,
   getPrice,
   baselinePrice,
 }: {
@@ -540,6 +569,8 @@ function EditableConfigGroup({
   onOpenModel: (optionValue: string) => void;
   onDeleteGroup: () => void;
   onUpdateGroup: (next: { title: string; helper: string }) => void;
+  selectedMesh?: string | null;
+  onUpdateMeshVisibility?: (optionValue: string, visible: boolean) => void;
   getPrice: (optionValue: string) => number;
   baselinePrice: number;
 }) {
@@ -596,6 +627,12 @@ function EditableConfigGroup({
             onDelete={() => onDelete(option.value)}
             onEdit={(next) => onEdit(option.value, next)}
             onOpenModel={() => onOpenModel(option.value)}
+            selectedMesh={selectedMesh}
+            onToggleMeshVisibility={
+              selectedMesh && onUpdateMeshVisibility
+                ? (meshName, visible) => onUpdateMeshVisibility(option.value, visible)
+                : undefined
+            }
             baselinePrice={baselinePrice}
             computedPrice={getPrice(option.value)}
           />
@@ -724,6 +761,19 @@ function buildMeshTree(node: Object3D, counter: { current: number }): MeshTreeNo
   };
 }
 
+function flattenMeshNames(nodes: MeshTreeNode[]): string[] {
+  const names: string[] = [];
+  nodes.forEach((node) => {
+    if (node.isMesh) {
+      names.push(node.name);
+    }
+    if (node.children.length > 0) {
+      names.push(...flattenMeshNames(node.children));
+    }
+  });
+  return Array.from(new Set(names)).sort();
+}
+
 function ChaptersList({
   orderedChapters,
   mode,
@@ -743,6 +793,8 @@ function ChaptersList({
   onOpenModel,
   onDeleteGroup,
   onUpdateGroup,
+  activeMeshName,
+  onUpdateOptionVisibility,
   trackFocus = false,
   collapsedChapters,
   toggleCollapse,
@@ -776,6 +828,14 @@ function ChaptersList({
       title: string;
       helper: string;
     }
+  ) => void;
+  activeMeshName?: string | null;
+  onUpdateOptionVisibility?: (
+    chapterId: string,
+    groupId: string,
+    optionValue: string,
+    meshName: string,
+    visible: boolean
   ) => void;
   trackFocus?: boolean;
   collapsedChapters: Record<string, boolean>;
@@ -919,6 +979,19 @@ function ChaptersList({
                     }
                     onDeleteGroup={() => onDeleteGroup(chapter.id, group.id)}
                     onUpdateGroup={(next) => onUpdateGroup(chapter.id, group.id, next)}
+                    selectedMesh={activeMeshName}
+                    onUpdateMeshVisibility={
+                      activeMeshName && onUpdateOptionVisibility
+                        ? (optionValue, visible) =>
+                            onUpdateOptionVisibility(
+                              chapter.id,
+                              group.id,
+                              optionValue,
+                              activeMeshName,
+                              visible
+                            )
+                        : undefined
+                    }
                     getPrice={getPrice}
                     baselinePrice={getBaseline(group.id)}
                   />
@@ -1126,6 +1199,8 @@ function HomeContent({
     const counter = { current: 1 };
     return scene.children.map((child) => buildMeshTree(child, counter)).filter(Boolean) as MeshTreeNode[];
   }, [gltfScene]);
+  const allMeshes = useMemo(() => flattenMeshNames(meshTree), [meshTree]);
+  const [activeMeshName, setActiveMeshName] = useState<string | null>(null);
 
   const moveChapter = useCallback((fromIndex: number, toIndex: number) => {
     setChapterOrder((prev) => {
@@ -1741,6 +1816,15 @@ function HomeContent({
     };
   }, [isClient, matrixActive]);
 
+  useEffect(() => {
+    if (!activeMeshName && allMeshes.length > 0) {
+      setActiveMeshName(allMeshes[0]);
+    }
+    if (activeMeshName && !allMeshes.includes(activeMeshName)) {
+      setActiveMeshName(allMeshes[0] ?? null);
+    }
+  }, [allMeshes, activeMeshName]);
+
   const objectVisibility = useMemo(() => {
     const hiddenMeshes = new Set<string>();
 
@@ -1795,6 +1879,8 @@ function HomeContent({
     onOpenModel: openOptionModelEditor,
     onDeleteGroup: handleDeleteGroup,
     onUpdateGroup: handleUpdateGroup,
+    activeMeshName,
+    onUpdateOptionVisibility: handleUpdateOptionVisibility,
     collapsedChapters,
     toggleCollapse: (chapterId: string) =>
       setCollapsedChapters((prev) => ({ ...prev, [chapterId]: !prev[chapterId] })),
@@ -1914,99 +2000,127 @@ function HomeContent({
         >
           <div className="relative flex-1 min-h-0 w-full">
             {isDesignMode && activeChapter && activeFocusKey && (
-              <div className="absolute left-3 top-3 z-30 w-[300px] space-y-3 rounded-sm border border-[#999999] bg-[#e9e9e9] p-3 text-[#111111] shadow-2xl backdrop-blur">
-                <div className="flex items-center justify-between text-xs uppercase tracking-[0.25em] text-[#111111]/60">
-                  <span>Camera</span>
-                  <span className="rounded-sm bg-white/10 px-2 py-0.5 text-[10px] text-[#ff6a3a]">
-                    {activeFocusKey}
-                  </span>
-                </div>
-                <div className="flex flex-col gap-2 text-sm text-[#111111]/80">
-                  {!orbitEnabled && (
-                    <>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const snapshot =
-                            orbitCameraState ?? preOrbitCameraState ?? deriveCameraFromFocus(activeFocusKey);
-                          if (snapshot) {
-                            setOrbitCameraState(snapshot);
-                            setPreOrbitCameraState(snapshot);
-                          } else {
-                            setPreOrbitCameraState(null);
-                          }
-                          setOrbitEnabled(true);
-                        }}
-                        className="rounded-sm border border-[#999999] hover:border-[#ff6a3a] px-3 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-[#111111] hover:bg-[#ff6a3a]/10 "
-                      >
-                        Change camera
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setIsMatrixOpen((prev) => !prev);
-                          setIsPricingOpen(false);
-                        }}
-                        className={`rounded-sm border px-3 py-2 text-xs font-semibold uppercase tracking-[0.2em] transition-colors ${
-                          isMatrixOpen
-                            ? "bg-[#ff6a3a] text-[#111111] border-[#ff6a3a]"
-                            : "border-[#999999] text-[#111111] hover:border-[#ff6a3a] hover:bg-[#ff6a3a]/10"
-                        }`}
-                      >
-                        {isMatrixOpen ? "Close Model" : "Model"}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setIsPricingOpen((prev) => !prev);
-                          setIsMatrixOpen(false);
-                        }}
-                        className={`rounded-sm border px-3 py-2 text-xs font-semibold uppercase tracking-[0.2em] transition-colors ${
-                          isPricingOpen
-                            ? "bg-[#ff6a3a] text-[#111111] border-[#ff6a3a]"
-                            : "border-[#999999] text-[#111111] hover:border-[#ff6a3a] hover:bg-[#ff6a3a]/10"
-                        }`}
-                      >
-                        {isPricingOpen ? "Close Pricing" : "Pricing"}
-                      </button>
-                    </>
-                  )}
-                  {orbitEnabled && (
-                    <div className="space-y-2">
-                      <p className="text-[11px] text-[#111111]/60">Use orbit to frame the shot.</p>
-                      <div className="flex gap-2">
+              <div className="absolute left-0 top-0 z-30  h-full w-[300px]  p-3 text-[#111111] ">
+                <div className="h-full p-3 rounded-sm border border-[#999999] bg-[#e9e9e9] flex flex-col shadow-2xl backdrop-blur">
+                <div className="shrink-0 space-y-3">
+                  <div className="flex items-center justify-between text-xs uppercase tracking-[0.25em] text-[#111111]/60">
+                    <span>Camera</span>
+                    <span className="rounded-sm bg-white/10 px-2 py-0.5 text-[10px] text-[#ff6a3a]">
+                      {activeFocusKey}
+                    </span>
+                  </div>
+                  <div className="flex flex-col gap-2 text-sm text-[#111111]/80">
+                    {!orbitEnabled && (
+                      <>
                         <button
                           type="button"
                           onClick={() => {
                             const snapshot =
-                              preOrbitCameraState ?? deriveCameraFromFocus(activeFocusKey) ?? orbitCameraState;
-                            setOrbitCameraState(snapshot);
-                            setOrbitEnabled(false);
-                            setResetCameraToken((t) => t + 1);
+                              orbitCameraState ?? preOrbitCameraState ?? deriveCameraFromFocus(activeFocusKey);
+                            if (snapshot) {
+                              setOrbitCameraState(snapshot);
+                              setPreOrbitCameraState(snapshot);
+                            } else {
+                              setPreOrbitCameraState(null);
+                            }
+                            setOrbitEnabled(true);
                           }}
-                          className="flex-1 rounded-sm border border-[#999999] bg-white/10 px-3 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-[#111111] hover:border-[#ff6a3a] hover:text-[#ff6a3a]"
+                          className="rounded-sm border border-[#999999] hover:border-[#ff6a3a] px-3 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-[#111111] hover:bg-[#ff6a3a]/10 "
                         >
-                          Reset
+                          Change camera
                         </button>
-                        <button
+                        {/* <button
                           type="button"
-                          onClick={handleKeepCurrentView}
-                          disabled={!orbitCameraState}
-                          className={`flex-1 rounded-sm px-3 py-2 text-xs font-semibold uppercase tracking-[0.2em] shadow ${
-                            orbitCameraState
-                              ? "bg-[#ff6a3a] text-[#111111] hover:bg-[#ff6a3a]"
-                              : "bg-white/10 text-[#111111]/60"
+                          onClick={() => {
+                            setIsMatrixOpen((prev) => !prev);
+                            setIsPricingOpen(false);
+                          }}
+                          className={`rounded-sm border px-3 py-2 text-xs font-semibold uppercase tracking-[0.2em] transition-colors ${
+                            isMatrixOpen
+                              ? "bg-[#ff6a3a] text-[#111111] border-[#ff6a3a]"
+                              : "border-[#999999] text-[#111111] hover:border-[#ff6a3a] hover:bg-[#ff6a3a]/10"
                           }`}
                         >
-                          Keep this view
+                          {isMatrixOpen ? "Close Model" : "Model"}
+                        </button> */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsPricingOpen((prev) => !prev);
+                            setIsMatrixOpen(false);
+                          }}
+                          className={`rounded-sm border px-3 py-2 text-xs font-semibold uppercase tracking-[0.2em] transition-colors ${
+                            isPricingOpen
+                              ? "bg-[#ff6a3a] text-[#111111] border-[#ff6a3a]"
+                              : "border-[#999999] text-[#111111] hover:border-[#ff6a3a] hover:bg-[#ff6a3a]/10"
+                          }`}
+                        >
+                          {isPricingOpen ? "Close Pricing" : "Pricing"}
                         </button>
+                      </>
+                    )}
+                    {orbitEnabled && (
+                      <div className="space-y-2">
+                        <p className="text-[11px] text-[#111111]/60">Use orbit to frame the shot.</p>
+                        <div className="flex gap-2">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const snapshot =
+                                preOrbitCameraState ?? deriveCameraFromFocus(activeFocusKey) ?? orbitCameraState;
+                              setOrbitCameraState(snapshot);
+                              setOrbitEnabled(false);
+                              setResetCameraToken((t) => t + 1);
+                            }}
+                            className="flex-1 rounded-sm border border-[#999999] bg-white/10 px-3 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-[#111111] hover:border-[#ff6a3a] hover:text-[#ff6a3a]"
+                          >
+                            Reset
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleKeepCurrentView}
+                            disabled={!orbitCameraState}
+                            className={`flex-1 rounded-sm px-3 py-2 text-xs font-semibold uppercase tracking-[0.2em] shadow ${
+                              orbitCameraState
+                                ? "bg-[#ff6a3a] text-[#111111] hover:bg-[#ff6a3a]"
+                                : "bg-white/10 text-[#111111]/60"
+                            }`}
+                          >
+                            Keep this view
+                          </button>
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    )}
+                  </div>
+                  <p className="text-[11px] text-[#111111]/50">
+                    Stored for <span className="font-semibold text-[#111111]">{activeChapter.title}</span>.
+                  </p>
                 </div>
-                <p className="text-[11px] text-[#111111]/50">
-                  Stored for <span className="font-semibold text-[#111111]">{activeChapter.title}</span>.
-                </p>
+                {allMeshes.length > 0 && (
+                  <div className="mt-3 flex-1 min-h-0 overflow-y-auto border-t border-[#999999]/40 pt-2">
+                    <p className="mb-1 text-[10px] uppercase tracking-[0.2em] text-[#111111]/50">
+                      Meshes
+                    </p>
+                    <ul className="space-y-0.5 text-[11px] font-mono text-[#111111]/80">
+                      {allMeshes.map((name) => (
+                        <li key={name}>
+                          <button
+                            type="button"
+                            onClick={() => setActiveMeshName(name)}
+                            className={`w-full truncate text-left px-2 py-0.5 rounded-sm ${
+                              activeMeshName === name
+                                ? "bg-[#ff6a3a]/20 text-[#111111]"
+                                : "hover:bg-white/60 text-[#111111]/80"
+                            }`}
+                          >
+                            {name}
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                </div>
               </div>
             )}
             {isDesignMode && (
