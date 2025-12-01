@@ -605,36 +605,6 @@ function EditableConfigGroup({
   );
 }
 
-function CanvasResizer({ mode, freezeResize = false }: { mode: "design" | "preview"; freezeResize?: boolean }) {
-  const { gl, camera } = useThree();
-
-  useEffect(() => {
-    if (freezeResize) return;
-    const parent = gl?.domElement?.parentElement;
-    if (!parent || typeof ResizeObserver === "undefined") return;
-    const resize = () => {
-      const { width, height } = parent.getBoundingClientRect();
-      if (width > 0 && height > 0) {
-        gl.setSize(width, height);
-        if (camera instanceof PerspectiveCamera) {
-          camera.aspect = width / height;
-          camera.updateProjectionMatrix();
-        }
-      }
-    };
-    const observer = new ResizeObserver(resize);
-    observer.observe(parent);
-    resize();
-    const raf = requestAnimationFrame(resize);
-    return () => {
-      observer.disconnect();
-      cancelAnimationFrame(raf);
-    };
-  }, [camera, gl, mode, freezeResize]);
-
-  return null;
-}
-
 function ConfiguratorCanvas({
   focus,
   modelConfig,
@@ -677,7 +647,7 @@ function ConfiguratorCanvas({
   if (!gltfScene) return null;
   return (
     <Canvas shadows camera={{ position: [4, 3, 6], fov: 50 }}>
-      <CanvasResizer mode={mode} freezeResize={freezeResize} />
+      {/* <CanvasResizer mode={mode} freezeResize={freezeResize} /> */}
       <color attach="background" args={["#e9e9e9"]} />
       <ambientLight intensity={0.7} />
       <directionalLight
@@ -1836,7 +1806,7 @@ function HomeContent({
   };
 
   const content = (
-    <div className="flex flex-col gap-6 pb-20 min-h-screen md:pb-0 md:min-h-screen md:grid md:grid-rows-[auto,1fr] md:gap-8">
+    <div className="flex flex-col gap-6 pb-20 min-h-screen md:pb-0 md:h-screen md:grid md:grid-rows-[auto,1fr] md:gap-8">
       {allowSwitch && (
         <div className="flex items-center gap-1 p-1 text-xs uppercase tracking-[0.3em] text-[#111111] shadow-2xl backdrop-blur">
           <button
