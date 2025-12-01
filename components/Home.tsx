@@ -1831,7 +1831,7 @@ function HomeContent({
       )}
       <section className={`${mergedClasses.heroSection}  overflow-auto pr-2`}>
         {isDesignMode ? (
-          <div className="space-y-3 rounded-sm border border-[#999999] bg-white/5 p-4">
+          <div className="space-y-3 p-4">
             <input
               className="w-full rounded-sm border border-[#999999] bg-[#e9e9e9] px-3 py-2 text-sm uppercase tracking-[0.4em] text-[#111111]"
               value={hero.kicker}
