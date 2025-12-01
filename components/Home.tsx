@@ -1444,23 +1444,7 @@ function HomeContent({
     [focusTargetConfigs]
   );
 
-  const handleUpdateChapterVisibility = useCallback(
-    (chapterId: string, meshName: string, visible: boolean) => {
-      setChapters((prev) =>
-        prev.map((chapter) => {
-          if (chapter.id !== chapterId) return chapter;
-          const visibility = { ...(chapter.visibility ?? {}) };
-          if (visible) {
-            delete visibility[meshName]; // Remove explicit false if setting to true (default)
-          } else {
-            visibility[meshName] = false;
-          }
-          return { ...chapter, visibility };
-        })
-      );
-    },
-    []
-  );
+
 
   const handleUpdateOptionVisibility = useCallback(
     (
@@ -1858,17 +1842,17 @@ function HomeContent({
                           }
                           setOrbitEnabled(true);
                         }}
-                        className="rounded-sm bg-white/10 px-3 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-[#111111] hover:bg-white/20"
+                        className="rounded-sm border border-[#999999] hover:border-[#ff6a3a] px-3 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-[#111111] hover:bg-[#ff6a3a]/10 "
                       >
                         Change camera
                       </button>
                       <button
                         type="button"
                         onClick={() => setIsMatrixOpen((prev) => !prev)}
-                        className={`rounded-sm border border-[#ff6a3a] px-3 py-2 text-xs font-semibold uppercase tracking-[0.2em] transition-colors ${
+                        className={`rounded-sm border px-3 py-2 text-xs font-semibold uppercase tracking-[0.2em] transition-colors ${
                           isMatrixOpen
-                            ? "bg-[#ff6a3a] text-[#111111] border-[#ff6a3a]"
-                            : "text-[#ff6a3a] hover:border-[#ff6a3a] hover:bg-[#ff6a3a]/10"
+                            ? "hover:bg-[#ff6a3a]/10 text-[#111111] border-[#999999] hover:border-[#ff6a3a]"
+                            : "hover:bg-[#ff6a3a]/10 text-[#111111] border-[#999999] hover:border-[#ff6a3a] "
                         }`}
                       >
                         {isMatrixOpen ? "Close Model" : "Model"}
@@ -1979,7 +1963,7 @@ function HomeContent({
                           }
                           setOrbitEnabled(true);
                         }}
-                        className="rounded-sm bg-white/10 px-3 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-[#111111] hover:bg-white/20"
+                        className="rounded-sm border border-[#ff6a3a] px-3 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-[#ff6a3a] hover:bg-[#ff6a3a] hover:text-[#111111]"
                       >
                         Change camera
                       </button>
@@ -2076,7 +2060,6 @@ function HomeContent({
             onClose={() => setIsMatrixOpen(false)}
             chapters={orderedChapters}
             meshTree={meshTree}
-            onUpdateChapterVisibility={handleUpdateChapterVisibility}
             onUpdateOptionVisibility={handleUpdateOptionVisibility}
           />
         </div>

@@ -6,7 +6,6 @@ type VisibilityMatrixProps = {
   onClose: () => void;
   chapters: Config["chapters"];
   meshTree: MeshTreeNode[];
-  onUpdateChapterVisibility: (chapterId: string, meshName: string, visible: boolean) => void;
   onUpdateOptionVisibility: (
     chapterId: string,
     groupId: string,
@@ -40,7 +39,6 @@ export function VisibilityMatrix({
   onClose,
   chapters,
   meshTree,
-  onUpdateChapterVisibility,
   onUpdateOptionVisibility,
 }: VisibilityMatrixProps) {
   const [activeChapterId, setActiveChapterId] = useState<string>(() => chapters[0]?.id ?? "");
@@ -106,9 +104,7 @@ export function VisibilityMatrix({
                 <th className="border-b border-white/10 bg-slate-950 px-3 py-2 font-medium text-white/50">
                   Mesh Name
                 </th>
-                <th className="border-b border-white/10 bg-slate-950 px-3 py-2 font-medium text-teal-200">
-                  Base
-                </th>
+
                 {activeChapter.groups.map((group) =>
                   group.options.map((option) => (
                     <th
@@ -134,18 +130,7 @@ export function VisibilityMatrix({
                   <tr key={meshName} className="hover:bg-white/5">
                     <td className="px-3 py-1 font-mono text-[10px] text-white/70">{meshName}</td>
                     
-                    {/* Chapter Base Visibility */}
-                    <td className="px-3 py-1 text-center">
-                      <input
-                        type="checkbox"
-                        checked={!isChapterHidden}
-                        onChange={(e) =>
-                          onUpdateChapterVisibility(activeChapter.id, meshName, e.target.checked)
-                        }
-                        className="h-3 w-3 rounded border-white/20 bg-white/10 accent-teal-400"
-                        title={`Toggle visibility for ${meshName} in ${activeChapter.title}`}
-                      />
-                    </td>
+
 
                     {/* Options Visibility */}
                     {activeChapter.groups.map((group) =>
