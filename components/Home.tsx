@@ -19,6 +19,7 @@ import { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import { DndProvider, useDrag, useDrop } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import { VisibilityMatrix, MeshTreeNode } from "./VisibilityMatrix";
+import { PricingMatrix } from "./PricingMatrix";
 
 import configurator from "@/config/configurator.json";
 
@@ -80,6 +81,7 @@ export type Config = {
     title: string;
     paragraphs: string[];
   };
+  pricingRules?: Record<string, Record<string, number>>;
 };
 
 export type HomeClassNames = {
@@ -155,6 +157,7 @@ function resolveModelUrl(src: string) {
 function normalizeConfigPrices(config: Config): Config {
   return {
     ...config,
+    pricingRules: config.pricingRules ?? {},
     chapters: config.chapters.map((chapter) => ({
       ...chapter,
       groups: chapter.groups.map((group) => ({
@@ -1035,16 +1038,18 @@ function HomeContent({
     optionValue: string;
   } | null>(null);
   const [isMatrixOpen, setIsMatrixOpen] = useState(false);
+  const [isPricingOpen, setIsPricingOpen] = useState(false);
   const [collapsedChapters, setCollapsedChapters] = useState<Record<string, boolean>>({});
   const [isEmbedOpen, setIsEmbedOpen] = useState(false);
   const [embedCopied, setEmbedCopied] = useState(false);
-  const matrixActive = isMatrixOpen && isDesignMode;
+  const matrixActive = (isMatrixOpen || isPricingOpen) && isDesignMode;
   const handleModeChange = useCallback(
     (nextMode: "design" | "preview") => {
       if (!allowSwitch) return;
       setMode(nextMode);
       if (nextMode === "preview") {
         setIsMatrixOpen(false);
+        setIsPricingOpen(false);
       }
     },
     [allowSwitch]
@@ -1374,17 +1379,104 @@ function HomeContent({
     return option?.visibility ?? {};
   }, [chapters, visibilityTarget]);
 
+  const [pricingRules, setPricingRules] = useState<Record<string, Record<string, number>>>(
+    () => config.pricingRules ?? {}
+  );
+
+  // Initialize base prices from option.price if not present in pricingRules
+  useEffect(() => {
+    setPricingRules((prev) => {
+      const next = { ...prev };
+      let changed = false;
+      orderedChapters.forEach((chapter) => {
+        chapter.groups.forEach((group) => {
+          group.options.forEach((option) => {
+            if (!next[option.value]) {
+              next[option.value] = {};
+              changed = true;
+            }
+            if (next[option.value][option.value] === undefined) {
+              next[option.value][option.value] = option.price ?? 0;
+              changed = true;
+            }
+          });
+        });
+      });
+      return changed ? next : prev;
+    });
+  }, []); // Run once on mount/config load
+
+  const calculateOptionPrice = useCallback(
+    (optionValue: string, currentSelections: Record<string, string>) => {
+      const rules = pricingRules[optionValue];
+      if (!rules) return 0;
+
+      // 1. Base Price (Diagonal)
+      let finalPrice = rules[optionValue] ?? 0;
+
+      // 2. Check for overrides from selected dependencies
+      // We iterate through all selected options. If a selected option is a dependency for this option (has a rule),
+      // we apply it.
+      // Conflict Resolution: "Latest wins" based on chapter/group order is ideal, but for now we just take the last one found
+      // in the selections map iteration order, or we can rely on the user's "no conflicts" assumption.
+      // To be safer, we can iterate through orderedChapters to find selected dependencies in order.
+      
+      // We need to find which selected options are dependencies.
+      const selectedValues = Object.values(currentSelections);
+      
+      // Iterate in order to respect "waterfall" priority if we wanted to, but for now simple check.
+      // Actually, let's iterate orderedChapters to find the *last* selected dependency to apply its override.
+      
+      let foundOverride = false;
+      
+      // We need to check dependencies in order.
+      // But wait, the matrix is [Target][Dependency].
+      
+      for (const chapter of orderedChapters) {
+        for (const group of chapter.groups) {
+          const selectedInGroup = currentSelections[group.id];
+          if (selectedInGroup && rules[selectedInGroup] !== undefined) {
+             // This selected option has an override rule for our target option.
+             // Since we iterate in order, this will overwrite previous ones, effectively implementing "Latest wins".
+             finalPrice = rules[selectedInGroup];
+             foundOverride = true;
+          }
+        }
+      }
+
+      return finalPrice;
+    },
+    [orderedChapters, pricingRules]
+  );
+
   const totalPrice = useMemo(() => {
     let total = 0;
     orderedChapters.forEach((chapter) => {
       chapter.groups.forEach((group) => {
         const selected = selections[group.id];
-        const option = group.options.find((opt) => opt.value === selected);
-        total += option?.price ?? 0;
+        if (selected) {
+          total += calculateOptionPrice(selected, selections);
+        }
       });
     });
     return total;
-  }, [orderedChapters, selections]);
+  }, [orderedChapters, selections, calculateOptionPrice]);
+
+  const handleUpdatePrice = useCallback(
+    (targetId: string, dependencyId: string, price: number | undefined) => {
+      setPricingRules((prev) => {
+        const next = { ...prev };
+        if (!next[targetId]) next[targetId] = {};
+        if (price === undefined) {
+          delete next[targetId][dependencyId];
+        } else {
+          next[targetId][dependencyId] = price;
+        }
+        return next;
+      });
+    },
+    []
+  );
 
   const handleToggleMeshVisibility = useCallback(
     (meshName: string) => {
@@ -1848,14 +1940,31 @@ function HomeContent({
                       </button>
                       <button
                         type="button"
-                        onClick={() => setIsMatrixOpen((prev) => !prev)}
+                        onClick={() => {
+                          setIsMatrixOpen((prev) => !prev);
+                          setIsPricingOpen(false);
+                        }}
                         className={`rounded-sm border px-3 py-2 text-xs font-semibold uppercase tracking-[0.2em] transition-colors ${
                           isMatrixOpen
-                            ? "hover:bg-[#ff6a3a]/10 text-[#111111] border-[#999999] hover:border-[#ff6a3a]"
-                            : "hover:bg-[#ff6a3a]/10 text-[#111111] border-[#999999] hover:border-[#ff6a3a] "
+                            ? "bg-[#ff6a3a] text-[#111111] border-[#ff6a3a]"
+                            : "border-[#999999] text-[#111111] hover:border-[#ff6a3a] hover:bg-[#ff6a3a]/10"
                         }`}
                       >
                         {isMatrixOpen ? "Close Model" : "Model"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsPricingOpen((prev) => !prev);
+                          setIsMatrixOpen(false);
+                        }}
+                        className={`rounded-sm border px-3 py-2 text-xs font-semibold uppercase tracking-[0.2em] transition-colors ${
+                          isPricingOpen
+                            ? "bg-[#ff6a3a] text-[#111111] border-[#ff6a3a]"
+                            : "border-[#999999] text-[#111111] hover:border-[#ff6a3a] hover:bg-[#ff6a3a]/10"
+                        }`}
+                      >
+                        {isPricingOpen ? "Close Pricing" : "Pricing"}
                       </button>
                     </>
                   )}
@@ -2056,11 +2165,18 @@ function HomeContent({
             />
           </div>
           <VisibilityMatrix
-            isOpen={matrixActive}
+            isOpen={isMatrixOpen && isDesignMode}
             onClose={() => setIsMatrixOpen(false)}
             chapters={orderedChapters}
             meshTree={meshTree}
             onUpdateOptionVisibility={handleUpdateOptionVisibility}
+          />
+          <PricingMatrix
+            isOpen={isPricingOpen && isDesignMode}
+            onClose={() => setIsPricingOpen(false)}
+            chapters={orderedChapters}
+            pricingRules={pricingRules}
+            onUpdatePrice={handleUpdatePrice}
           />
         </div>
       )}
