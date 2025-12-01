@@ -710,6 +710,8 @@ function ChaptersList({
   toggleCollapse,
   moveChapter,
   getPrice,
+  onAddChapter,
+  onDeleteChapter,
 }: {
   orderedChapters: Config["chapters"];
   mode: "design" | "preview";
@@ -734,6 +736,8 @@ function ChaptersList({
   toggleCollapse: (chapterId: string) => void;
   moveChapter?: (from: number, to: number) => void;
   getPrice: (optionValue: string) => number;
+  onAddChapter: () => void;
+  onDeleteChapter: (chapterId: string) => void;
 }) {
   const isDesignMode = mode === "design";
 
@@ -820,6 +824,16 @@ function ChaptersList({
                           Cancel
                         </button>
                       </div>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onDeleteChapter(chapter.id);
+                        }}
+                        className="rounded-sm border border-red-300 px-3 py-1 text-xs font-semibold text-red-500 hover:border-red-400"
+                      >
+                        Delete chapter
+                      </button>
                     </>
                   ) : (
                     <>
@@ -866,6 +880,16 @@ function ChaptersList({
                             </button>
                           </div>
                         )}
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onDeleteChapter(chapter.id);
+                          }}
+                          className="rounded-sm border border-red-300 px-3 py-1 text-xs font-semibold text-red-500 hover:border-red-400"
+                        >
+                          Delete
+                        </button>
                       </div>
                     </>
                   )}
@@ -938,6 +962,17 @@ function ChaptersList({
           )}
         </div>
       ))}
+      {isDesignMode && (
+        <div className="flex justify-end">
+          <button
+            type="button"
+            onClick={onAddChapter}
+            className="rounded-sm border border-[#ff6a3a] bg-[#ff6a3a]/10 px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-[#ff6a3a] hover:border-[#ff6a3a]"
+          >
+            Add chapter
+          </button>
+        </div>
+      )}
     </div>
   );
 }
@@ -1577,12 +1612,23 @@ function HomeContent({
         <span className="text-xs uppercase tracking-[0.2em] text-[#111111]/50">Total</span>
         <span className="ml-2 text-lg font-semibold text-[#111111]">{currency.format(totalPrice)}</span>
       </div>
-      <button
-        type="button"
-        className="rounded-sm bg-[#ff6a3a] px-5 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-[#111111] shadow hover:bg-[#ff6a3a]"
-      >
-        Buy now
-      </button>
+      <div className="flex items-center gap-2">
+        {isDesignMode && (
+          <button
+            type="button"
+            onClick={() => setIsEmbedOpen(true)}
+            className="rounded-sm border border-[#999999] bg-white/30 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-[#111111] hover:border-[#ff6a3a] hover:text-[#ff6a3a]"
+          >
+            Embed
+          </button>
+        )}
+        <button
+          type="button"
+          className="rounded-sm bg-[#ff6a3a] px-5 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-[#111111] shadow hover:bg-[#ff6a3a]"
+        >
+          Buy now
+        </button>
+      </div>
     </div>
   );
 
@@ -1763,6 +1809,8 @@ function HomeContent({
       setCollapsedChapters((prev) => ({ ...prev, [chapterId]: !prev[chapterId] })),
     moveChapter,
     getPrice: getOptionPrice,
+    onAddChapter: addChapter,
+    onDeleteChapter: deleteChapter,
   };
 
   const content = (
@@ -1890,17 +1938,6 @@ function HomeContent({
                     </button>
                   )}
                 </div>
-                {isDesignMode && (
-                  <div className="mt-4 flex gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setIsEmbedOpen(true)}
-                      className="rounded-sm border border-[#999999] px-3 py-1 text-xs uppercase tracking-[0.3em] text-[#111111] hover:border-[#999999]"
-                    >
-                      Embed
-                    </button>
-                  </div>
-                )}
                 <div className="space-y-2">
                 {hero.paragraphs.map((paragraph, index) => (
                   <p key={index} className={mergedClasses.heroParagraph}>
