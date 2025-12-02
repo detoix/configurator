@@ -452,95 +452,119 @@ function EditableOptionRow({
             onChange={onSelect}
             className="mt-1 h-4 w-4 accent-[#ff6a3a]"
           />
-          {isEditing ? (
-            <div className="flex-1 space-y-2">
-              <input
-                className="w-full rounded-sm border border-[#999999] bg-[#e9e9e9] px-3 py-2 text-sm text-[#111111]"
-                value={draft.label}
-                onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                  setDraft((prev) => ({ ...prev, label: e.target.value }))
-                }
-                placeholder="Label"
-              />
-              <input
-                className="w-full rounded-sm border border-[#999999] bg-[#e9e9e9] px-3 py-2 text-sm text-[#111111]"
-                value={draft.description}
-                onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                  setDraft((prev) => ({ ...prev, description: e.target.value }))
-                }
-                placeholder="Description"
-              />
-              <div className="rounded-sm border border-[#999999] bg-[#f5f5f5] px-3 py-2 text-xs text-[#111111]">
-                <p className="font-semibold text-[#ff6a3a]">
-                  {computedPrice - baselinePrice <= 0
-                    ? "Included"
-                    : `+${currency.format(computedPrice - baselinePrice)}`}
-                </p>
-                <p className="text-[11px] text-[#555555]">Price is managed in Pricing Matrix.</p>
-              </div>
-            </div>
-          ) : (
-            <div>
-              <p className="text-sm font-semibold uppercase tracking-wide text-[#111111]">{option.label}</p>
-              <p className="text-xs text-[#111111]">{option.description}</p>
-              <p className="text-xs font-semibold text-[#ff6a3a]">
-                {computedPrice - baselinePrice <= 0
-                  ? "Included"
-                  : `+${currency.format(computedPrice - baselinePrice)}`}
-              </p>
-            </div>
-          )}
+          <div className="flex-1">
+            <p className="text-sm font-semibold uppercase tracking-wide text-[#111111]">{option.label}</p>
+            <p className="text-xs text-[#111111]">{option.description}</p>
+            <p className="text-xs font-semibold text-[#ff6a3a] mt-1">
+              {computedPrice - baselinePrice <= 0
+                ? "Included"
+                : `+${currency.format(computedPrice - baselinePrice)}`}
+            </p>
+          </div>
         </label>
         <div className="flex flex-col gap-2 items-end">
-          {selectedMesh && onToggleMeshVisibility && (
-            <label className="flex items-center gap-1 text-[10px] uppercase tracking-[0.15em] text-[#111111]/70">
-              <span>Mesh</span>
-              <span className="max-w-[120px] truncate font-mono text-[9px] text-[#111111]/60">
-                {selectedMesh}
-              </span>
-              <div className="relative inline-flex h-4 w-7 shrink-0 items-center rounded-full bg-[#ff6a3a]/40">
-                <input
-                  type="checkbox"
-                  className="sr-only"
-                  checked={option.visibility?.[selectedMesh] !== false}
-                  onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                    onToggleMeshVisibility(selectedMesh, e.target.checked)
-                  }
-                />
-                <span
-                  className={`inline-block h-3 w-3 transform rounded-full bg-white shadow-sm transition-transform ${
-                    option.visibility?.[selectedMesh] === false ? "translate-x-1" : "translate-x-3.5"
-                  }`}
-                />
-              </div>
-            </label>
-          )}
-          {isEditing ? (
-            <button
-              type="button"
-              onClick={handleSave}
-              className="rounded-sm bg-[#ff6a3a] px-3 py-1 text-xs font-semibold text-[#111111]"
-            >
-              Save
-            </button>
-          ) : (
+          {!isEditing && (
             <button
               type="button"
               onClick={() => setIsEditing(true)}
-              className="rounded-sm border border-[#999999] px-3 py-1 text-xs text-[#111111] hover:border-[#ff6a3a]"
+              className="rounded-sm border border-[#999999] px-3 py-1 text-xs text-[#111111] hover:border-[#ff6a3a] bg-white/50"
             >
               Edit
             </button>
           )}
-          <button
-            type="button"
-            onClick={isEditing ? () => setIsEditing(false) : onDelete}
-            className="rounded-sm border border-[#999999] px-3 py-1 text-xs text-[#111111] hover:border-[#ff6a3a]"
-            >
-              {isEditing ? "Cancel" : "Delete"}
-            </button>
         </div>
       </div>
+
+      {isEditing && (
+        <div className="mt-2 pt-4 border-t border-[#999999]/30 space-y-4 animate-in fade-in slide-in-from-top-2 duration-200">
+          <div className="space-y-3">
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold uppercase tracking-wider text-[#111111]/50">Label</label>
+              <input
+                className="w-full rounded-sm border border-[#999999] bg-white/50 px-3 py-2 text-sm text-[#111111] focus:border-[#ff6a3a] focus:outline-none transition-colors"
+                value={draft.label}
+                onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                  setDraft((prev) => ({ ...prev, label: e.target.value }))
+                }
+                placeholder="Option Label"
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold uppercase tracking-wider text-[#111111]/50">Description</label>
+              <input
+                className="w-full rounded-sm border border-[#999999] bg-white/50 px-3 py-2 text-sm text-[#111111] focus:border-[#ff6a3a] focus:outline-none transition-colors"
+                value={draft.description}
+                onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                  setDraft((prev) => ({ ...prev, description: e.target.value }))
+                }
+                placeholder="Short description"
+              />
+            </div>
+          </div>
+
+          {selectedMesh && onToggleMeshVisibility && (
+            <div className="rounded-sm bg-[#111111]/5 p-3 space-y-2">
+               <div className="flex items-center justify-between">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-[#111111]/70">
+                  Mesh Visibility Override
+                </span>
+                <span className="font-mono text-[10px] text-[#111111]/50 bg-white/50 px-1.5 py-0.5 rounded">
+                  {selectedMesh}
+                </span>
+              </div>
+              
+              <label className="flex items-center justify-between cursor-pointer group">
+                <span className="text-xs text-[#111111]">
+                  Visible when selected
+                </span>
+                <div className="relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#ff6a3a] focus:ring-offset-2 bg-[#999999]/30 has-[:checked]:bg-[#ff6a3a]">
+                  <input
+                    type="checkbox"
+                    className="sr-only"
+                    checked={option.visibility?.[selectedMesh] !== false}
+                    onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                      onToggleMeshVisibility(selectedMesh, e.target.checked)
+                    }
+                  />
+                  <span
+                    className={`pointer-events-none inline-block h-3 w-3 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                      option.visibility?.[selectedMesh] !== false ? "translate-x-5" : "translate-x-1"
+                    }`}
+                  />
+                </div>
+              </label>
+              <p className="text-[10px] text-[#111111]/50 leading-tight">
+                Controls whether <strong>{selectedMesh}</strong> is visible when this option is active.
+              </p>
+            </div>
+          )}
+
+          <div className="flex items-center justify-end gap-2 pt-2">
+            <button
+              type="button"
+              onClick={onDelete}
+              className="px-3 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50 rounded-sm transition-colors"
+            >
+              Delete Option
+            </button>
+            <div className="h-4 w-px bg-[#999999]/30 mx-1" />
+            <button
+              type="button"
+              onClick={() => setIsEditing(false)}
+              className="px-3 py-1.5 text-xs font-semibold text-[#111111]/70 hover:text-[#111111] hover:bg-black/5 rounded-sm transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={handleSave}
+              className="px-4 py-1.5 text-xs font-bold text-white bg-[#ff6a3a] hover:bg-[#ff8a6a] rounded-sm shadow-sm transition-colors"
+            >
+              Save Changes
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -602,13 +626,6 @@ function EditableConfigGroup({
         <div className="flex flex-col gap-2">
           <button
             type="button"
-            onClick={onAdd}
-            className="rounded-sm border border-[#ff6a3a]/60 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-[#ff6a3a] hover:border-[#ff6a3a]"
-          >
-            Add option
-          </button>
-          <button
-            type="button"
             onClick={onDeleteGroup}
             className="rounded-sm border border-red-300/60 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-red-500 hover:border-red-300"
           >
@@ -637,6 +654,27 @@ function EditableConfigGroup({
             computedPrice={getPrice(option.value)}
           />
         ))}
+        <button
+          type="button"
+          onClick={onAdd}
+          className="flex min-h-[100px] flex-col items-center justify-center gap-2 rounded-sm border-2 border-dashed border-[#999999]/40 bg-white/5 p-4 text-[#111111]/40 transition-all hover:border-[#ff6a3a] hover:bg-[#ff6a3a]/5 hover:text-[#ff6a3a]"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <line x1="12" y1="5" x2="12" y2="19" />
+            <line x1="5" y1="12" x2="19" y2="12" />
+          </svg>
+          <span className="text-xs font-semibold uppercase tracking-widest">Add Option</span>
+        </button>
       </div>
     </fieldset>
   );
@@ -1139,7 +1177,7 @@ function HomeContent({
   const [collapsedChapters, setCollapsedChapters] = useState<Record<string, boolean>>({});
   const [isEmbedOpen, setIsEmbedOpen] = useState(false);
   const [embedCopied, setEmbedCopied] = useState(false);
-  const matrixActive = (isMatrixOpen || isPricingOpen) && isDesignMode;
+  const matrixActive = isMatrixOpen && isDesignMode;
   const handleModeChange = useCallback(
     (nextMode: "design" | "preview") => {
       if (!allowSwitch) return;
@@ -2220,15 +2258,16 @@ function HomeContent({
             meshTree={meshTree}
             onUpdateOptionVisibility={handleUpdateOptionVisibility}
           />
-          <PricingMatrix
-            isOpen={isPricingOpen && isDesignMode}
-            onClose={() => setIsPricingOpen(false)}
-            chapters={orderedChapters}
-            pricingRules={pricingRules}
-            onUpdatePrice={handleUpdatePrice}
-          />
         </div>
       )}
+
+      <PricingMatrix
+        isOpen={isPricingOpen && isDesignMode}
+        onClose={() => setIsPricingOpen(false)}
+        chapters={orderedChapters}
+        pricingRules={pricingRules}
+        onUpdatePrice={handleUpdatePrice}
+      />
 
         {mobilePriceBar}
         {isEmbedOpen && (
