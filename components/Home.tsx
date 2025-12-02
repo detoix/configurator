@@ -20,6 +20,8 @@ import { DndProvider, useDrag, useDrop } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import { VisibilityMatrix, MeshTreeNode } from "./VisibilityMatrix";
 import { PricingMatrix } from "./PricingMatrix";
+import { Environment, Stage, ContactShadows } from "@react-three/drei";
+import { EffectComposer, Bloom, Vignette, SMAA } from "@react-three/postprocessing";
 
 import configurator from "@/config/configurator.json";
 
@@ -724,13 +726,7 @@ function ConfiguratorCanvas({
     <Canvas shadows camera={{ position: [4, 3, 6], fov: 50 }}>
       {/* <CanvasResizer mode={mode} freezeResize={freezeResize} /> */}
       <color attach="background" args={["#e9e9e9"]} />
-      <ambientLight intensity={0.7} />
-      <directionalLight
-        position={[5, 10, 5]}
-        castShadow
-        intensity={1.1}
-        shadow-mapSize={[1024, 1024]}
-      />
+      
       <Suspense fallback={null}>
         <CameraRig
           focus={focus}
@@ -748,15 +744,19 @@ function ConfiguratorCanvas({
             onStart={handleOrbitStart}
           />
         )}
-        <SingleModel modelConfig={modelConfig} visibility={visibility} gltfScene={gltfScene} />
-        <mesh rotation-x={-Math.PI / 2} position={[0, -1.2, 0]} receiveShadow>
-          <planeGeometry args={[50, 50]} />
-          <shadowMaterial opacity={0.25} />
-        </mesh>
+        
+        <Stage intensity={0.5} environment="studio" shadows={false} adjustCamera={false}>
+          <SingleModel modelConfig={modelConfig} visibility={visibility} gltfScene={gltfScene} />
+        </Stage>
+        
+        <ContactShadows position={[0, -0.01, 0]} opacity={0.4} scale={20} blur={2} far={4.5} />
       </Suspense>
-      {orbitEnabled && (
-        <ambientLight intensity={0.05} color="#88ffff" />
-      )}
+
+      <EffectComposer>
+        <SMAA />
+        <Bloom luminanceThreshold={1} mipmapBlur intensity={0.5} radius={0.4} />
+        <Vignette eskil={false} offset={0.1} darkness={0.5} />
+      </EffectComposer>
     </Canvas>
   );
 }
