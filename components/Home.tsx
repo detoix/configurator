@@ -1090,7 +1090,7 @@ function HomeContent({
   classNames?: Partial<HomeClassNames>;
   initialMode?: "design" | "preview";
   allowModeSwitch?: boolean;
-  onStateChange?: (state: { selections: Record<string, string>; totalPrice: number }) => void;
+  onStateChange?: (state: { selections: Record<string, string>; totalPrice: number, objectVisibility: Record<string, boolean> }) => void;
 }) {
   const [focusTargetConfigs, setFocusTargetConfigs] = useState(config.scene.focusTargets);
   const [sceneModel, setSceneModel] = useState(config.scene.model);
@@ -1591,9 +1591,7 @@ function HomeContent({
     return total;
   }, [orderedChapters, selections, calculateOptionPrice]);
 
-  useEffect(() => {
-    onStateChange?.({ selections, totalPrice });
-  }, [selections, totalPrice, onStateChange]);
+  
 
   const getOptionPrice = useCallback(
     (optionValue: string) => calculateOptionPrice(optionValue, selections),
@@ -1900,6 +1898,10 @@ function HomeContent({
     });
     return map;
   }, [orderedChapters, selections, activeChapterId]);
+
+  useEffect(() => {
+    onStateChange?.({ selections, totalPrice, objectVisibility });
+  }, [selections, totalPrice, onStateChange]);
 
   const chaptersListProps = {
     orderedChapters,
