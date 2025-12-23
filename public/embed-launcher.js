@@ -12,10 +12,10 @@
 
   const params = new URLSearchParams();
   if (dataset.model) {
-    params.set("model", decodeURIComponent(dataset.model));
+    params.set("model", dataset.model);
   }
   if (dataset.config) {
-    params.set("config", decodeURIComponent(dataset.config));
+    params.set("config", dataset.config);
   }
 
   const iframe = document.createElement("iframe");
