@@ -1,3 +1,5 @@
+'use client';
+
 import Home, { defaultConfig } from "@/components/Home";
 
 type EmbedPageProps = {
@@ -30,5 +32,14 @@ export default function EmbedPage({ searchParams }: EmbedPageProps) {
       }
     : parsedConfig;
 
-  return <Home config={configWithModel} initialMode="preview" allowModeSwitch={false} />;
+  const handleStateChange = (state: { selections: Record<string, string>; totalPrice: number }) => {
+    if (window.parent) {
+      window.parent.postMessage(
+        { type: 'configurator-state-change', payload: state },
+        '*' // In a real application, specify the parent's origin for security
+      );
+    }
+  };
+
+  return <Home config={configWithModel} initialMode="preview" allowModeSwitch={false} onStateChange={handleStateChange} />;
 }

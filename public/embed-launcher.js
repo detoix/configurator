@@ -27,7 +27,19 @@
   iframe.style.border = "0";
   iframe.style.width = iframe.width === "100%" ? "100%" : `${iframe.width}px`;
   iframe.style.height = `${iframe.height}px`;
+  iframe.id = `${targetId}-iframe`; // Assign a unique ID to the iframe
 
   target.innerHTML = "";
   target.appendChild(iframe);
+
+  // Add event listener for messages from the iframe
+  window.addEventListener('message', (event) => {
+    // Only process messages from the expected iframe and with the correct type
+    if (iframe.contentWindow === event.source && event.data && event.data.type === 'configurator-state-change') {
+      const customEvent = new CustomEvent('configurator-state-change', {
+        detail: event.data.payload,
+      });
+      target.dispatchEvent(customEvent);
+    }
+  });
 })();

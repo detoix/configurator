@@ -1083,11 +1083,13 @@ function HomeContent({
   classNames,
   initialMode,
   allowModeSwitch,
+  onStateChange,
 }: {
   config: Config;
   classNames?: Partial<HomeClassNames>;
   initialMode?: "design" | "preview";
   allowModeSwitch?: boolean;
+  onStateChange?: (state: { selections: Record<string, string>; totalPrice: number }) => void;
 }) {
   const [focusTargetConfigs, setFocusTargetConfigs] = useState(config.scene.focusTargets);
   const [sceneModel, setSceneModel] = useState(config.scene.model);
@@ -1587,6 +1589,10 @@ function HomeContent({
     });
     return total;
   }, [orderedChapters, selections, calculateOptionPrice]);
+
+  useEffect(() => {
+    onStateChange?.({ selections, totalPrice });
+  }, [selections, totalPrice, onStateChange]);
 
   const getOptionPrice = useCallback(
     (optionValue: string) => calculateOptionPrice(optionValue, selections),
@@ -2317,6 +2323,7 @@ export default function Home({
   classNames,
   initialMode,
   allowModeSwitch,
+  onStateChange,
 }: HomeProps) {
   const baseConfig = useMemo(() => configProp ?? defaultConfig, [configProp]);
   const normalizedConfig = useMemo(() => normalizeConfigPrices(baseConfig), [baseConfig]);
@@ -2329,6 +2336,7 @@ export default function Home({
       classNames={classNames}
       initialMode={initialMode}
       allowModeSwitch={allowModeSwitch}
+      onStateChange={onStateChange}
     />
   );
 }
