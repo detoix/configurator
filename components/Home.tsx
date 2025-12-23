@@ -114,6 +114,7 @@ export type HomeProps = {
   classNames?: Partial<HomeClassNames>;
   initialMode?: "design" | "preview";
   allowModeSwitch?: boolean;
+  onStateChange?: any;
 };
 
 const defaultConfig = configurator as unknown as Config;
